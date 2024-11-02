@@ -1,6 +1,11 @@
+# Secrets
+secrets.json
+
 # Python
 venv
 __pycache__
 
 # Miscellaneous
 .DS_Store
+.idea
+.vscode
