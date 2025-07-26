@@ -22,8 +22,25 @@ Welcome to Jarvis, a fully automated personal assistant.
 
 ### Completed:
 
+- Overview of upcoming day
+  - Today's weather
+
 ### In Progress:
 
 - Overview of upcoming day
+  - Today's todos
+  - Today's events
 
 ### Not Started:
+
+- Picovoice Porcupine integration for wake word detection mechanism
+  - Likely to be a separate application, probably a Swift project
+    for a simple, standalone iOS app that will perpetually run in 
+    the background to listen for triggers.
+  - The backend routes (on this app) will handle the process 
+    post-trigger:
+    - Route to handle initializing the audio stream for the user request input
+    - Route to handle the actual audio streaming process
+  - The server's response audio output will then be sent and handled 
+    by the iOS app.
+- 
