@@ -28,3 +28,6 @@ build/
 .coverage
 htmlcov/
 .ruff_cache/
+
+# Database
+db/*.db

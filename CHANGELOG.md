@@ -4,6 +4,28 @@ All notable changes to the Jarvis project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2025-12-08
+
+### Added
+
+#### Conversation Memory System
+- **memory.py** - SQLite-based conversation storage with time-based retrieval
+- **cache.py** - TTL-based data cache (weather 30min, events/todos 5min)
+- **db/init.py** - Database initialization script
+- **`POST /chat` endpoint** - Multi-turn conversations with Nova
+- **Intent detection** - Keyword-based detection for weather/events/todos/refresh
+- **34 new tests** - 15 for memory, 19 for cache (99 total)
+
+#### Brain Enhancements
+- **`chat()` method** - Multi-turn conversation support using Gemini's chat format
+- **Context window management** - Automatic history trimming
+
+### Changed
+- `heart.py` now initializes Memory and Cache at startup
+- Brain supports conversation history for contextual responses
+
+---
+
 ## [0.3.0] - 2025-12-08
 
 ### Added

@@ -1,18 +1,22 @@
 """Heart module - Central coordinator and FastAPI server for Jarvis.
 
 This is the main entry point that orchestrates all Jarvis components:
-Brain (AI), Arms (HTTP client), and Mouth (TTS).
+Brain (AI), Arms (HTTP client), Mouth (TTS), Memory, and Cache.
 """
 
 import datetime
 import json
 import logging
+import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 from arms import Arms
 from brain import Brain
+from cache import Cache
+from memory import Memory
 from mouth import Mouth
 
 
@@ -38,6 +42,8 @@ vitals.info("Coming to life...")
 brain = become_intelligent()
 arms = attach_arms()
 mouth = unmute()
+memory = Memory()
+cache = Cache()
 vitals.info("All systems functional. Jarvis is ready! How is your day, sir?")
 
 jarvis_actions = {
@@ -46,7 +52,32 @@ jarvis_actions = {
     "calendar": "/events",
     "daily_routine": "/daily",
     "introduction": "/intro",
+    "chat": "/chat",
 }
+
+# Intent detection patterns for /chat
+INTENT_PATTERNS = {
+    "weather": r"\b(weather|temperature|rain|forecast|cold|hot|sunny|cloudy)\b",
+    "events": r"\b(calendar|meeting|event|schedule|appointment)\b",
+    "todos": r"\b(todo|task|reminder|to-do|tasks)\b",
+    "refresh": r"\b(refresh|update|check again|refetch)\b",
+}
+
+
+# Pydantic models for /chat
+class ChatRequest(BaseModel):
+    """Request body for /chat endpoint."""
+
+    message: str
+    speak: bool = False
+
+
+class ChatResponse(BaseModel):
+    """Response body for /chat endpoint."""
+
+    response: str
+    data: dict | None = None
+    status: int
 
 
 @asynccontextmanager
@@ -244,6 +275,100 @@ async def get_introduction():
 
     # Return the AI-generated introduction
     return {"intro": intro, "status": 200}
+
+
+def detect_intents(message: str) -> set[str]:
+    """Detect intents from user message using regex patterns.
+
+    Args:
+        message: The user's message.
+
+    Returns:
+        Set of detected intent names.
+    """
+    message_lower = message.lower()
+    intents = set()
+
+    for intent, pattern in INTENT_PATTERNS.items():
+        if re.search(pattern, message_lower, re.IGNORECASE):
+            intents.add(intent)
+
+    return intents
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_with_nova(request: ChatRequest) -> ChatResponse:
+    """Handle conversational messages with Nova.
+
+    Supports multi-turn conversations with memory, cached data access,
+    and optional text-to-speech output.
+    """
+    user_message = request.message
+    today = datetime.date.today().isoformat()
+
+    vitals.info(f"Chat: {user_message[:50]}...")
+
+    # Detect intents
+    intents = detect_intents(user_message)
+    force_refresh = "refresh" in intents
+    fetched_data: dict = {}
+
+    # Fetch data based on intents
+    if "weather" in intents:
+        weather_data = await cache.get(
+            "weather",
+            arms.get_weather,
+            force_refresh=force_refresh,
+        )
+        if weather_data and weather_data.get("result"):
+            fetched_data["weather"] = json.loads(weather_data["result"])
+
+    if "events" in intents:
+
+        async def fetch_events():
+            return await arms.get_events(today)
+
+        events_data = await cache.get("events", fetch_events, force_refresh=force_refresh)
+        if events_data and events_data.get("result"):
+            fetched_data["events"] = json.loads(events_data["result"])
+
+    if "todos" in intents:
+
+        async def fetch_todos():
+            return await arms.get_todos(today)
+
+        todos_data = await cache.get("todos", fetch_todos, force_refresh=force_refresh)
+        if todos_data and todos_data.get("result"):
+            fetched_data["todos"] = json.loads(todos_data["result"])
+
+    # Build context from cache
+    context = cache.get_context_summary()
+
+    # If we have freshly fetched data, add it to context
+    if fetched_data:
+        context += f"\n\nFRESHLY FETCHED DATA:\n{json.dumps(fetched_data, indent=2, default=str)}"
+
+    # Get conversation history
+    history = memory.get_for_context(hours=4.0, max_messages=30)
+
+    # Generate AI response
+    response_text = brain.chat(user_message, history=history, context=context)
+
+    # Store messages in memory
+    memory.add_message("user", user_message)
+    memory.add_message("assistant", response_text)
+
+    # Optional TTS
+    if request.speak:
+        mouth.speak(response_text)
+
+    vitals.info(f"Response: {response_text[:50]}...")
+
+    return ChatResponse(
+        response=response_text,
+        data=fetched_data if fetched_data else None,
+        status=200,
+    )
 
 
 if __name__ == "__main__":

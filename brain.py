@@ -123,3 +123,84 @@ class Brain:
             likely_option = json.loads(likely_option)
 
         return likely_option
+
+    def chat(
+        self,
+        user_message: str,
+        history: list[dict[str, str]] | None = None,
+        context: str = "",
+    ) -> str:
+        """Generate a response with conversation history.
+
+        Uses Gemini's multi-turn conversation format for context-aware responses.
+
+        Args:
+            user_message: The current user message.
+            history: Previous conversation messages as list of
+                {'role': 'user'|'assistant', 'content': '...'} dicts.
+            context: Additional context (e.g., cached data summary).
+
+        Returns:
+            The AI-generated response text.
+        """
+        # Build system prompt with current time
+        from datetime import datetime
+
+        now = datetime.now()
+        current_time = now.strftime("%A, %B %d, %Y at %I:%M %p")
+
+        system_prompt = (
+            f"You are Nova, a helpful personal AI assistant. "
+            f"The current date and time is: {current_time}. "
+            f"You have access to the user's calendar, todo list, and weather data. "
+            f"Be concise, friendly, and helpful. "
+            f"When the user asks about 'next' events or tasks, use the current time to determine what is upcoming. "
+            f"When referencing data, use natural language - don't read raw JSON. "
+            f"Output plain text only - no markdown formatting."
+        )
+
+        # Add context if provided
+        if context:
+            system_prompt += f"\n\n{context}"
+
+        # Build multi-turn conversation format for Gemini
+        contents = []
+
+        # Add system instruction as first user message
+        contents.append(
+            {
+                "role": "user",
+                "parts": [{"text": f"[System: {system_prompt}]"}],
+            }
+        )
+        contents.append(
+            {
+                "role": "model",
+                "parts": [{"text": "Understood. I'm Nova, ready to help!"}],
+            }
+        )
+
+        # Add conversation history
+        if history:
+            for msg in history:
+                role = "model" if msg["role"] == "assistant" else "user"
+                contents.append(
+                    {
+                        "role": role,
+                        "parts": [{"text": msg["content"]}],
+                    }
+                )
+
+        # Add current user message
+        contents.append(
+            {
+                "role": "user",
+                "parts": [{"text": user_message}],
+            }
+        )
+
+        # Generate response
+        self.logger.debug(f"Chat with {len(contents)} messages")
+        response = self.ai.generate_content(contents)
+
+        return response.text

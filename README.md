@@ -129,6 +129,7 @@ The server will start at `http://127.0.0.1:8000`.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
+| `/chat` | POST | Conversational interface with Nova |
 | `/weather` | GET | Get current weather forecast |
 | `/events` | GET | Get today's calendar events |
 | `/todos` | GET | Get today's tasks from Todoist |
@@ -144,6 +145,16 @@ curl http://localhost:8000/weather
 
 # Run daily briefing (speaks aloud)
 curl http://localhost:8000/daily
+
+# Chat with Nova
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is the weather like?"}'
+
+# Follow-up question (Nova remembers context)
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Will I need an umbrella?"}'
 ```
 
 ## Configuration
@@ -171,6 +182,8 @@ weather_api.set_coordinates(lat=40.7128, lon=-74.0060)  # New York
 ## Development Status
 
 ### ✅ Completed
+- Conversation memory with SQLite storage
+- TTL-based data caching
 - Weather API integration (Open-Meteo)
 - Google Calendar API integration (service account)
 - Todoist API integration (REST API v2)

@@ -16,6 +16,8 @@ heart.py (FastAPI Server)
     ├── brain.py (Gemini AI)
     ├── arms.py (HTTP Client)
     ├── mouth.py (TTS Output)
+    ├── memory.py (SQLite Conversations)
+    ├── cache.py (TTL Data Cache)
     └── apis/
         ├── weather.py (Open-Meteo)
         ├── calendar.py (Google Calendar)
@@ -25,9 +27,11 @@ heart.py (FastAPI Server)
 ### Key Design Decisions
 
 1. **Body metaphor**: Components are named after body parts (heart, brain, arms, mouth) to represent their functions
-2. **Module-level initialization**: `heart.py` initializes Brain, Arms, and Mouth at module level (before FastAPI app starts)
+2. **Module-level initialization**: `heart.py` initializes Brain, Arms, Mouth, Memory, and Cache at module level
 3. **Async HTTP**: Uses `httpx.AsyncClient` for all external API calls
 4. **TTS with speed adjustment**: gTTS output is sped up 1.4x for natural listening
+5. **Conversation memory**: SQLite-based storage with time-based retrieval (last 4 hours)
+6. **Data caching**: TTL-based caching (weather 30min, events/todos 5min)
 
 ## Important Context for AI Agents
 
@@ -64,8 +68,16 @@ heart.py (FastAPI Server)
 
 - **Google Calendar**: ✅ Complete - uses service account auth
 - **Todoist**: ✅ Complete - uses API token auth
+- **Conversation Memory**: ✅ Complete - SQLite with time-based retrieval
+- **Data Cache**: ✅ Complete - TTL-based with force refresh
 - **Wake word detection**: Planned iOS app with Picovoice Porcupine
 - **User input routing**: Commented out in `heart.py`, needs completion
+
+### Database
+
+- SQLite database stored in `db/jarvis.db` (gitignored)
+- Initialize with: `python db/init.py`
+- Schema: `messages` table with `id`, `role`, `content`, `created_at`
 
 ### Code Style
 
@@ -96,10 +108,12 @@ make run  # or: python heart.py
 
 | File | Purpose | Key Classes/Functions |
 |------|---------|----------------------|
-| `heart.py` | FastAPI server, main entry | `app`, `lifespan()`, route handlers |
-| `brain.py` | AI processing | `Brain`, `process()`, `choose()` |
+| `heart.py` | FastAPI server, main entry | `app`, `lifespan()`, `/chat`, route handlers |
+| `brain.py` | AI processing | `Brain`, `process()`, `choose()`, `chat()` |
 | `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()`, `get_events()`, `get_todos()` |
 | `mouth.py` | Text-to-speech | `Mouth`, `speak()` |
+| `memory.py` | Conversation storage | `Memory`, SQLite, `add_message()`, `get_recent()` |
+| `cache.py` | Data caching | `Cache`, TTL-based, `get()`, `get_context_summary()` |
 | `apis/weather.py` | Weather API wrapper | `WeatherAPI`, builder pattern |
 | `apis/calendar.py` | Google Calendar API wrapper | `CalendarAPI`, service account auth |
 | `apis/todoist.py` | Todoist API wrapper | `TodoistAPI`, token auth |
