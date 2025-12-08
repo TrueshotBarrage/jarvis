@@ -35,12 +35,13 @@ class Mouth:
         self.audio_file = audio_file
         self.logger.info("Voice protocol ready. Sound systems operational!")
 
-    def speak(self, blurb: str, playback_speed: float = 1.25) -> None:
-        """Convert text to speech and play it aloud.
+    def speak(self, blurb: str, playback_speed: float = 1.4, autoplay: bool = False) -> None:
+        """Convert text to speech and save it to a file.
 
         Args:
             blurb: The text to speak.
-            playback_speed: Speed multiplier for audio (default 1.25x).
+            playback_speed: Speed multiplier for audio (default 1.4x).
+            autoplay: If True, play the audio after generating (default False).
         """
         # Generate audio file from text
         gTTS(blurb, slow=False).save(self.audio_file)
@@ -49,8 +50,9 @@ class Mouth:
         # Speed up audio (default gTTS speaks slowly)
         self._speed_up(self.audio_file, playback_speed=playback_speed)
 
-        # Play audio synchronously (blocks until done)
-        playsound3.playsound(self.audio_file)
+        # Play audio synchronously if autoplay is enabled
+        if autoplay:
+            playsound3.playsound(self.audio_file)
 
     @staticmethod
     def _speed_up(sound_file: str, playback_speed: float) -> None:
@@ -58,7 +60,7 @@ class Mouth:
 
         Args:
             sound_file: Path to the audio file to modify.
-            playback_speed: Speed multiplier (e.g., 1.25 = 25% faster).
+            playback_speed: Speed multiplier (e.g., 1.4 = 40% faster).
         """
         sound = pydub.AudioSegment.from_file(sound_file)
         faster_sound = sound.speedup(playback_speed=playback_speed)

@@ -106,6 +106,9 @@ async def run_daily_routine():
     # Get today's date
     today = datetime.date.today().isoformat()
 
+    # Collect speech outputs to consolidate into a single audio file
+    speech_parts: list[str] = []
+
     # Invoke the weather API
     weather_res = await arms.get_weather()
 
@@ -129,7 +132,7 @@ async def run_daily_routine():
 
     # todos_today = await arms.get_todos(today)
 
-    # Generate and speak weather summary
+    # Generate weather summary
     if weather:
         weather_prompt_context = (
             "Given the weather API response data, generate a concise and engaging "
@@ -144,9 +147,9 @@ async def run_daily_routine():
         weather_output = brain.process(
             weather, request_type="api_data", context=weather_prompt_context
         )
-        mouth.speak(weather_output)
+        speech_parts.append(weather_output)
 
-    # Generate and speak calendar summary
+    # Generate calendar summary
     if events:
         events_prompt_context = (
             "Given the calendar events data, generate a concise and engaging "
@@ -160,7 +163,12 @@ async def run_daily_routine():
         events_output = brain.process(
             events, request_type="api_data", context=events_prompt_context
         )
-        mouth.speak(events_output)
+        speech_parts.append(events_output)
+
+    # Generate consolidated audio file from all speech parts
+    if speech_parts:
+        combined_speech = " ".join(speech_parts)
+        mouth.speak(combined_speech)
 
     # Return full response
     return {"weather": weather, "events": events, "status": 200}
