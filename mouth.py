@@ -7,7 +7,7 @@ with audio speed adjustment and playback.
 import logging
 import threading
 
-import playsound
+import playsound3
 import pydub
 from gtts import gTTS
 
@@ -51,7 +51,7 @@ class Mouth:
         self._speed_up(self.audio_file, playback_speed=playback_speed)
 
         # Play audio in background thread to avoid blocking
-        threading.Thread(target=playsound.playsound, args=(self.audio_file,), daemon=True).start()
+        threading.Thread(target=playsound3.playsound, args=(self.audio_file,), daemon=True).start()
 
     @staticmethod
     def _speed_up(sound_file: str, playback_speed: float) -> None:

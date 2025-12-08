@@ -18,7 +18,7 @@ class TestMouth:
         mouth = Mouth(audio_file="/tmp/custom.mp3")
         assert mouth.audio_file == "/tmp/custom.mp3"
 
-    @patch("mouth.playsound.playsound")
+    @patch("mouth.playsound3.playsound")
     @patch("mouth.pydub.AudioSegment")
     @patch("mouth.gTTS")
     def test_speak_creates_audio_file(self, mock_gtts, mock_audio, _mock_playsound):
@@ -52,7 +52,7 @@ class TestMouth:
         mock_sound.speedup.assert_called_once_with(playback_speed=1.5)
         mock_faster.export.assert_called_once_with("/tmp/test.mp3", format="mp3")
 
-    @patch("mouth.playsound.playsound")
+    @patch("mouth.playsound3.playsound")
     @patch("mouth.pydub.AudioSegment")
     @patch("mouth.gTTS")
     def test_speak_custom_playback_speed(self, mock_gtts, mock_audio, _mock_playsound):

@@ -16,7 +16,7 @@ def mock_components():
     with (
         patch("brain.genai") as mock_genai,
         patch("mouth.gTTS") as mock_gtts,
-        patch("mouth.playsound") as mock_playsound,
+        patch("mouth.playsound3") as mock_playsound,
         patch("mouth.pydub") as mock_pydub,
     ):
         # Setup Brain mock

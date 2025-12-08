@@ -10,8 +10,8 @@ install:
 	$(PIP) install -r requirements.txt
 
 # Install development dependencies
-dev: install
-	$(PIP) install pytest pytest-asyncio pytest-cov ruff
+dev:
+	$(PIP) install -r requirements-dev.txt
 
 # Run linter
 lint:

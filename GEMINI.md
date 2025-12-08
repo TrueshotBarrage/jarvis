@@ -1,6 +1,9 @@
 # Gemini Agent Context
 
 > This file provides context for AI coding assistants working on this project.
+> ALWAYS remember to update this file with any new relevant context that future
+> AI agents will need to know. This includes any changes to the project structure,
+> new dependencies, new APIs, new endpoints, new actions, new features, etc.
 
 ## Project Overview
 
