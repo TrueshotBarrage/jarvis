@@ -1,54 +1,81 @@
+"""Brain module - AI integration for Jarvis using Google Gemini.
+
+This module provides LLM-powered processing for natural language understanding,
+intent classification, and content generation.
+"""
+
+import json
 import logging
-from typing import List, Dict
 
 import google.api_core.exceptions
 import google.generativeai as genai
-import json
 
 
 class Brain:
-    def __init__(self, secrets_file="secrets.json"):
-        # Set up logging
+    """AI processing unit using Google Gemini for intelligent operations.
+
+    Attributes:
+        logger: Module logger instance.
+        ai: Gemini generative model instance.
+    """
+
+    def __init__(self, secrets_file: str = "secrets.json") -> None:
+        """Initialize the Brain with Gemini AI connection.
+
+        Args:
+            secrets_file: Path to JSON file containing API keys.
+        """
         self.logger = logging.getLogger(__name__)
 
-        # Read the secrets.json file with the json library, then extract the key
+        # Load API key from secrets file
         self.logger.info("Reading secrets from config...")
-        with open(secrets_file, "r") as f:
+        with open(secrets_file) as f:
             secrets = json.load(f)
         gemini_api_key = secrets["gemini_api_key"]
         self.logger.info("Secrets fully initialized.")
 
-        # Initialize the AI
+        # Initialize Gemini AI
         self.logger.info("Establishing handshake protocol with Gemini...")
         genai.configure(api_key=gemini_api_key)
-        self.ai = genai.GenerativeModel("gemini-1.5-flash")
+        self.ai = genai.GenerativeModel("gemma-3-27b-it")
+
+        self._verify_connection()
+
+    def _verify_connection(self) -> None:
+        """Test the Gemini API connection with a timeout."""
         try:
-            conn_test_res = self.ai.generate_content(
-                "Test!", request_options={"timeout": 10}
-            )
-            conn_success = conn_test_res.text
-            self.logger.info(conn_success)
+            conn_test_res = self.ai.generate_content("Test!", request_options={"timeout": 10})
+            conn_success = conn_test_res.text.strip()
+            self.logger.info(f"Gemini: {conn_success}")
             self.logger.info("Contact established with Gemini servers.")
+            self.logger.info("Intelligence cortex fully activated and ready to go!")
         except google.api_core.exceptions.DeadlineExceeded as e:
             self.logger.warning(f"Gemini timeout error: {e}")
             self.logger.warning(
-                "Error establishing handshake with Gemini servers. Check your connection to the multiverse grid?"
+                "Error establishing handshake with Gemini servers. "
+                "Check your connection to the multiverse grid?"
             )
-            conn_success = None
-
-        if conn_success:
-            self.logger.info("Intelligence cortex fully activated and ready to go!")
-        else:
             self.logger.info(
                 "Intelligence cortex activated, but cannot reach multiverse grid network. "
                 "Complex thought processing may not be available."
             )
 
-    def process(self, message, request_type, context) -> str:
+    def process(self, message: str, request_type: str, context: str | None = None) -> str:
+        """Process a message using the AI model.
+
+        Args:
+            message: The input message or data to process.
+            request_type: Type of processing - 'api_data', 'choose', or 'choose_distribution'.
+            context: Additional context or instructions for the AI.
+
+        Returns:
+            The AI-generated response text.
+        """
         if request_type == "api_data":
-            prompt = f"{context}\n{message}" if context is not None else message
+            prompt = f"{context}\n{message}" if context is not None else str(message)
             thought = self.ai.generate_content(prompt)
-            output = thought.text
+            return thought.text
+
         elif request_type == "choose":
             prompt = (
                 f"The user is saying: '{message}'. Based on this input, choose "
@@ -56,7 +83,8 @@ class Brain:
                 f"{context}"
             )
             thought = self.ai.generate_content(prompt)
-            output = thought.text
+            return thought.text
+
         elif request_type == "choose_distribution":
             prompt = (
                 f"The user is saying: '{message}'. Based on this input, provide a normalized "
@@ -65,20 +93,32 @@ class Brain:
                 f"{context}"
                 f"\nFormat the output as a JSON object with the keys being the options and the values being the "
                 f"probability of that option, with the keys sorted in descending order of probability. "
-                f"For example: '{'Option 1': 0.5, 'Option 2': 0.3, 'Option 3': 0.2}'."
+                f"For example: {{'Option 1': 0.5, 'Option 2': 0.3, 'Option 3': 0.2}}."
             )
             thought = self.ai.generate_content(prompt)
-            output = thought.text
-        else:
-            output = "Hello world!"
+            return thought.text
 
-        return output
+        return "Hello world!"
 
     def choose(
-        self, user_input: str, options: List[str], get_probabilities: bool = False
-    ) -> str | Dict[str, float]:
+        self, user_input: str, options: list[str], get_probabilities: bool = False
+    ) -> str | dict[str, float]:
+        """Classify user input into one of the provided options.
+
+        Args:
+            user_input: The user's message to classify.
+            options: List of possible action/intent options.
+            get_probabilities: If True, return probability distribution over options.
+
+        Returns:
+            Either a single option string, or a dict mapping options to probabilities.
+
+        Raises:
+            json.JSONDecodeError: If probability mode fails to parse AI response.
+        """
         choose_type = "choose_distribution" if get_probabilities else "choose"
-        likely_option = self.process(user_input, choose_type, options)
+        likely_option = self.process(user_input, choose_type, str(options))
+
         if get_probabilities:
             likely_option = json.loads(likely_option)
 

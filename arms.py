@@ -1,90 +1,153 @@
-import logging
+"""Arms module - HTTP client for external API communication.
 
-from time import time
-from typing import Optional
+This module provides async HTTP capabilities for reaching out to external
+services like weather APIs, Todoist, and Google Calendar.
+"""
+
+import logging
+from typing import Any, TypedDict
 
 import httpx
-import asyncio
 
 from apis.weather import WeatherAPI
 
 
+class APIResponse(TypedDict):
+    """Standard response format for API calls."""
+
+    result: str | None
+    status: int
+
+
 class Arms:
-    def __init__(self):
-        # Set up logging
+    """Async HTTP client for external API communication.
+
+    This class wraps httpx.AsyncClient and provides convenient methods
+    for making API calls to various services.
+
+    Attributes:
+        logger: Module logger instance.
+        client: The underlying httpx AsyncClient (None until started).
+    """
+
+    def __init__(self) -> None:
+        """Initialize Arms with logging configured."""
         self.logger = logging.getLogger(__name__)
-
-        self.client = None
-
+        self.client: httpx.AsyncClient | None = None
         self.logger.info(
             "Useful appendages fully functional and ready to grab things at your command!"
         )
 
-    def __call__(self):
-        """Calling the instantiated Arms returns the wrapped singleton."""
-        # Ensure we don't use it if not started / running
-        assert self.client is not None
+    def __call__(self) -> httpx.AsyncClient:
+        """Return the wrapped httpx client singleton.
+
+        Returns:
+            The active httpx AsyncClient.
+
+        Raises:
+            AssertionError: If client hasn't been started.
+        """
+        assert self.client is not None, "Client not started. Call start() first."
         self.logger.info(
-            f"httpx client.is_closed(): {self.client.is_closed}. ID (will be unchanged): {id(self.client)}"
+            f"httpx client.is_closed(): {self.client.is_closed}. "
+            f"ID (will be unchanged): {id(self.client)}"
         )
         return self.client
 
-    def start(self):
-        """Instantiate the client. Call from the FastAPI startup hook."""
+    def start(self) -> None:
+        """Start the async HTTP client. Call from FastAPI startup hook."""
         self.client = httpx.AsyncClient()
         self.logger.info(f"httpx AsyncClient started. ID {id(self.client)}")
 
-    async def stop(self):
-        """Gracefully shut down. Call from the FastAPI shutdown hook."""
+    async def stop(self) -> None:
+        """Gracefully shut down the client. Call from FastAPI shutdown hook."""
+        if self.client is None:
+            return
+
         self.logger.info(
-            f"httpx client.is_closed(): {self.client.is_closed} - Now can be closed. ID (will be unchanged): {id(self.client)}"
+            f"httpx client.is_closed(): {self.client.is_closed} - "
+            f"Now can be closed. ID (will be unchanged): {id(self.client)}"
         )
         await self.client.aclose()
         self.logger.info(
-            f"httpx client.is_closed(): {self.client.is_closed}. ID (will be unchanged): {id(self.client)}"
+            f"httpx client.is_closed(): {self.client.is_closed}. "
+            f"ID (will be unchanged): {id(self.client)}"
         )
         self.client = None
         self.logger.info("httpx AsyncClient closed.")
 
-    async def get(self, url, params=None) -> dict:
+    async def get(self, url: str, params: dict[str, Any] | None = None) -> APIResponse:
+        """Make an async GET request.
+
+        Args:
+            url: The URL to request.
+            params: Optional query parameters.
+
+        Returns:
+            APIResponse with result text and status code.
+        """
         res = None
         try:
             res = await self.client.get(url, params=params)
             res.raise_for_status()
-
         except httpx.HTTPError as e:
             self.logger.error(f"Error: {e}")
             return {"result": None, "status": res.status_code if res else 404}
 
         return {"result": res.text, "status": res.status_code}
 
-    async def get_weather(self):
+    async def get_weather(self) -> APIResponse:
+        """Fetch current weather from Open-Meteo API.
+
+        Returns:
+            APIResponse containing weather JSON data.
+        """
         weather_api = WeatherAPI()
         weather_url = weather_api.build_url()
-        weather = await self.get(weather_url)
+        return await self.get(weather_url)
 
-        return weather
+    async def get_todos(self, day: str) -> APIResponse:
+        """Fetch todos for a specific day from Todoist.
 
-    async def get_todos(self, day):
+        Args:
+            day: Date string for which to fetch todos.
+
+        Returns:
+            APIResponse containing todos data.
+
+        TODO:
+            Set up Todoist API authentication and proper endpoint.
+        """
         todoist_url = f"/route/to/todoist/api/{day}"
-
         # TODO: Set up Todoist API, including params={API key, ...}
-        todos = await self.get(todoist_url)
+        return await self.get(todoist_url)
 
-        return todos
+    async def get_events(self, day: str) -> APIResponse:
+        """Fetch calendar events for a specific day from Google Calendar.
 
-    async def get_events(self, day):
+        Args:
+            day: Date string for which to fetch events.
+
+        Returns:
+            APIResponse containing calendar events data.
+
+        TODO:
+            Set up Google Calendar OAuth flow and API integration.
+        """
         gcal_url = f"/route/to/gcal/api/{day}"
-
         # TODO: Set up Google Calendar API, including params={API key, scopes, ...}
-        events = await self.get(gcal_url)
+        return await self.get(gcal_url)
 
-        return events
+    async def run_autobudget_pipeline(self) -> APIResponse:
+        """Trigger the autobudget pipeline on external server.
 
-    async def run_autobudget_pipeline(self):
+        Returns:
+            APIResponse from the pipeline execution.
+
+        TODO:
+            Set up server instance (cloud or RPi) with fixed endpoint.
+        """
         # TODO: Set up a server instance (cloud or RPi and establish a fixed endpoint)
         endpoint_base = ""
         endpoint_run = f"{endpoint_base}/run"
-        result = await self.get(endpoint_run)
-
-        return result
+        return await self.get(endpoint_run)

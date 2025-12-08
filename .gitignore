@@ -2,10 +2,27 @@
 secrets.json
 
 # Python
-venv
-__pycache__
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
 
-# Miscellaneous
+# Generated audio files
+*.mp3
+
+# IDE / Editor
 .DS_Store
-.idea
-.vscode
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/

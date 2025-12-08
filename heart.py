@@ -1,14 +1,19 @@
-import json
+"""Heart module - Central coordinator and FastAPI server for Jarvis.
 
-from brain import Brain
-from arms import Arms
-from mouth import Mouth
+This is the main entry point that orchestrates all Jarvis components:
+Brain (AI), Arms (HTTP client), and Mouth (TTS).
+"""
 
 import datetime
+import json
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
+
+from arms import Arms
+from brain import Brain
+from mouth import Mouth
 
 
 def become_intelligent():
@@ -19,8 +24,9 @@ def attach_arms():
     return Arms()
 
 
-def unmute():
-    return Mouth(brain)
+def unmute() -> Mouth:
+    """Initialize the text-to-speech module."""
+    return Mouth()
 
 
 logging.basicConfig(
@@ -44,7 +50,7 @@ jarvis_actions = {
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # noqa: ARG001
     # On startup
     arms.start()
     # Run the application
@@ -57,9 +63,10 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/test")
-async def test():
+async def test_external_api():
+    """Test external API connectivity."""
     res = await arms.get("https://stackoverflow.com")
-    vitals.info(f"External API response: {res["status"]}")
+    vitals.info(f"External API response: {res['status']}")
     return res
 
 
@@ -73,6 +80,7 @@ async def test():
 
 @app.get("/weather")
 async def get_weather():
+    """Get current weather forecast from Open-Meteo API."""
     # Invoke the weather API
     weather_res = await arms.get_weather()
 
@@ -94,8 +102,9 @@ async def get_weather():
 
 @app.get("/daily")
 async def run_daily_routine():
+    """Run daily routine: fetch weather and speak summary aloud."""
     # Fetch today's weather, todos, and calendar events
-    today = datetime.date.today()
+    datetime.date.today()
 
     # Invoke the weather API
     weather_res = await arms.get_weather()
@@ -127,9 +136,7 @@ async def run_daily_routine():
         "weather, if it exists, as well as sunrise and sunset times. "
         "Ensure the message is friendly and easy to understand."
     )
-    vocal_output = brain.process(
-        weather, request_type="api_data", context=weather_prompt_context
-    )
+    vocal_output = brain.process(weather, request_type="api_data", context=weather_prompt_context)
     mouth.speak(vocal_output)
 
     # mouth.speak(todos_today)
@@ -140,8 +147,9 @@ async def run_daily_routine():
 
 
 @app.get("/intro")
-async def test():
-    # Fetch today's weather, todos, and calendar events
+async def get_introduction():
+    """Get AI-generated assistant introduction."""
+    # Include today's date in the introduction
     today = datetime.date.today()
 
     prompt = (

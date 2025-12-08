@@ -42,7 +42,7 @@ class WeatherAPI:
             "timezone": "America/New_York",
         }
 
-    def set_coordinates(self, lat, lon):
+    def set_coordinates(self, lat: float, lon: float) -> "WeatherAPI":
         """Set the coordinates of the location you want the weather for.
 
         Args:
