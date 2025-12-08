@@ -111,17 +111,20 @@ class Arms:
         """Fetch todos for a specific day from Todoist.
 
         Args:
-            day: Date string for which to fetch todos.
+            day: Date string in ISO format (YYYY-MM-DD) for which to fetch todos.
 
         Returns:
-            APIResponse containing todos data.
-
-        TODO:
-            Set up Todoist API authentication and proper endpoint.
+            APIResponse containing todos data as JSON.
         """
-        todoist_url = f"/route/to/todoist/api/{day}"
-        # TODO: Set up Todoist API, including params={API key, ...}
-        return await self.get(todoist_url)
+        try:
+            from apis.todoist import TodoistAPI, TodoistAPIError
+
+            todoist_api = TodoistAPI()
+            tasks = todoist_api.get_tasks(day)
+            return {"result": json.dumps(tasks), "status": 200}
+        except TodoistAPIError as e:
+            self.logger.error(f"Todoist API error: {e}")
+            return {"result": None, "status": 500}
 
     async def get_events(self, day: str) -> APIResponse:
         """Fetch calendar events from ALL shared calendars for a specific day.

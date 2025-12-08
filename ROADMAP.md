@@ -7,13 +7,13 @@ This roadmap outlines planned features and improvements based on existing TODOs,
 ## 🎯 Priority 1: Core Functionality Completion
 
 ### Todoist Integration
-**Status:** Stub exists in `arms.py`  
+**Status:** ✅ Complete  
 **Effort:** Medium
 
-- [ ] Set up Todoist API authentication
-- [ ] Implement `get_todos(day)` method
-- [ ] Add daily todos to `/daily` routine
-- [ ] Create `/todos` endpoint
+- [x] Set up Todoist API authentication
+- [x] Implement `get_todos(day)` method
+- [x] Add daily todos to `/daily` routine
+- [x] Create `/todos` endpoint
 
 ### Google Calendar Integration
 **Status:** ✅ Complete  
@@ -86,9 +86,9 @@ Architecture:
 - [x] Improve error handling
 
 ### Infrastructure
-- [ ] Add unit tests
-- [ ] Add integration tests
-- [ ] CI/CD pipeline
+- [x] Add unit tests (65 tests)
+- [x] Add integration tests
+- [x] CI/CD pipeline
 - [ ] Docker containerization
 - [ ] Environment-based configuration
 

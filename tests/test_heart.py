@@ -142,12 +142,13 @@ class TestHeartAPIIntegration:
 
     @pytest.mark.asyncio
     async def test_daily_includes_events(self, app_client, mock_components):  # noqa: ARG002
-        """Test /daily endpoint fetches both weather and events."""
+        """Test /daily endpoint fetches weather, events, and todos."""
         import heart
 
         with (
             patch.object(heart.arms, "get_weather", new_callable=AsyncMock) as mock_weather,
             patch.object(heart.arms, "get_events", new_callable=AsyncMock) as mock_events,
+            patch.object(heart.arms, "get_todos", new_callable=AsyncMock) as mock_todos,
         ):
             mock_weather.return_value = {
                 "result": '{"current": {"temperature_2m": 65}}',
@@ -155,6 +156,10 @@ class TestHeartAPIIntegration:
             }
             mock_events.return_value = {
                 "result": '[{"summary": "Meeting"}]',
+                "status": 200,
+            }
+            mock_todos.return_value = {
+                "result": '[{"content": "Buy groceries"}]',
                 "status": 200,
             }
 
@@ -165,4 +170,38 @@ class TestHeartAPIIntegration:
             data = response.json()
             assert "weather" in data
             assert "events" in data
+            assert "todos" in data
             mock_events.assert_called_once()
+            mock_todos.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_todos_endpoint_success(self, app_client, mock_components):  # noqa: ARG002
+        """Test /todos endpoint returns tasks."""
+        import heart
+
+        with patch.object(heart.arms, "get_todos", new_callable=AsyncMock) as mock_get_todos:
+            mock_get_todos.return_value = {
+                "result": '[{"id": "1", "content": "Buy groceries", "priority": 2}]',
+                "status": 200,
+            }
+
+            async with app_client as client:
+                response = await client.get("/todos")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert isinstance(data, list)
+            assert data[0]["content"] == "Buy groceries"
+
+    @pytest.mark.asyncio
+    async def test_todos_endpoint_api_error(self, app_client, mock_components):  # noqa: ARG002
+        """Test /todos endpoint handles API errors gracefully."""
+        import heart
+
+        with patch.object(heart.arms, "get_todos", new_callable=AsyncMock) as mock_get_todos:
+            mock_get_todos.return_value = {"result": None, "status": 500}
+
+            async with app_client as client:
+                response = await client.get("/todos")
+
+            assert response.json() is None

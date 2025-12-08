@@ -102,12 +102,11 @@ async def get_weather():
 
 @app.get("/daily")
 async def run_daily_routine():
-    """Run daily routine: fetch weather and calendar events, speak summary aloud."""
+    """Run daily routine: fetch weather, calendar events, and todos, speak summary aloud."""
     # Get today's date
-    today = datetime.date.today().isoformat()
-
-    # Collect speech outputs to consolidate into a single audio file
-    speech_parts: list[str] = []
+    today = datetime.date.today()
+    today_iso = today.isoformat()
+    today_formatted = today.strftime("%A, %B %d")  # e.g., "Sunday, December 08"
 
     # Invoke the weather API
     weather_res = await arms.get_weather()
@@ -122,7 +121,7 @@ async def run_daily_routine():
         vitals.info(f"Today's weather: {weather}")
 
     # Fetch calendar events
-    events_res = await arms.get_events(today)
+    events_res = await arms.get_events(today_iso)
     if events_res["status"] == 200 and events_res["result"]:
         events = json.loads(events_res["result"])
         vitals.info(f"Today's events: {len(events)} events found")
@@ -130,48 +129,62 @@ async def run_daily_routine():
         events = []
         vitals.warning("Could not fetch calendar events")
 
-    # todos_today = await arms.get_todos(today)
+    # Fetch todos
+    todos_res = await arms.get_todos(today_iso)
+    if todos_res["status"] == 200 and todos_res["result"]:
+        todos = json.loads(todos_res["result"])
+        vitals.info(f"Today's todos: {len(todos)} task(s) found")
+    else:
+        todos = []
+        vitals.warning("Could not fetch todos")
 
-    # Generate weather summary
-    if weather:
-        weather_prompt_context = (
-            "Given the weather API response data, generate a concise and engaging "
-            "message suitable for a personal assistant to read aloud. The message should "
-            "include current temperature, chance of rain, and any notable weather events "
-            "for today. Include a brief description of the highs and lows of the daily "
-            "weather, if it exists, as well as sunrise and sunset times. "
-            "Ensure the message is friendly and easy to understand. "
-            "IMPORTANT: Output plain text only - no markdown, no asterisks, no bullet "
-            "points, no formatting. This will be read aloud by text-to-speech."
-        )
-        weather_output = brain.process(
-            weather, request_type="api_data", context=weather_prompt_context
-        )
-        speech_parts.append(weather_output)
+    # Build consolidated data for a single AI prompt
+    daily_data = {
+        "date": today_formatted,
+        "weather": weather,
+        "calendar_events": events,
+        "todos": todos,
+    }
 
-    # Generate calendar summary
-    if events:
-        events_prompt_context = (
-            "Given the calendar events data, generate a concise and engaging "
-            "message suitable for a personal assistant to read aloud. Summarize "
-            "the events for today including their times and titles. Group events "
-            "by calendar if multiple calendars are present. If there are many events, "
-            "prioritize the most important ones. Keep it brief and easy to understand. "
-            "IMPORTANT: Output plain text only - no markdown, no asterisks, no bullet "
-            "points, no formatting. This will be read aloud by text-to-speech."
-        )
-        events_output = brain.process(
-            events, request_type="api_data", context=events_prompt_context
-        )
-        speech_parts.append(events_output)
+    # Generate a unified, intelligent daily briefing
+    daily_prompt = f"""You are Nova, a personal AI assistant delivering a morning briefing for {today_formatted}.
 
-    # Generate consolidated audio file from all speech parts
-    if speech_parts:
-        combined_speech = " ".join(speech_parts)
-        mouth.speak(combined_speech)
+Given the following data, create a natural, conversational daily briefing that flows smoothly as a single cohesive message. Do NOT simply list every item - instead, intelligently summarize and prioritize.
 
-    # Return full response
-    return {"weather": weather, "events": events, "status": 200}
+GUIDELINES:
+1. Start with a brief, friendly greeting mentioning the day
+2. Give a quick weather overview (temperature, conditions, anything notable like rain)
+3. Highlight the 2-3 most important calendar events or meetings, mentioning approximate times
+4. Mention 1-3 priority tasks from the todo list that are most actionable today
+5. End with a brief, encouraging sign-off
+
+CONSTRAINTS:
+- Keep the entire briefing under 150 words
+- Use natural speech patterns (e.g., "You've got a meeting at 10" not "Meeting scheduled for 10:00:00")
+- Skip items that are routine/unimportant
+- If there are no events or todos, briefly acknowledge it and move on
+- Output plain text ONLY - no markdown, asterisks, bullet points, or formatting
+- This will be read aloud by text-to-speech
+
+DATA:
+{json.dumps(daily_data, indent=2, default=str)}
+
+Generate the daily briefing now:"""
+
+    briefing = brain.process(daily_data, request_type="api_data", context=daily_prompt)
+
+    # Generate audio from the briefing
+    if briefing:
+        mouth.speak(briefing)
+
+    # Return full response including the AI-generated briefing
+    return {
+        "weather": weather,
+        "events": events,
+        "todos": todos,
+        "briefing": briefing,
+        "status": 200,
+    }
 
 
 @app.get("/events")
@@ -194,6 +207,26 @@ async def get_events():
     return events
 
 
+@app.get("/todos")
+async def get_todos():
+    """Get today's tasks from Todoist."""
+    today = datetime.date.today().isoformat()
+
+    todos_res = await arms.get_todos(today)
+
+    # Check if the API call was successful
+    api_status_code = todos_res["status"]
+    if api_status_code != 200:
+        vitals.error(f"Error fetching todos: {api_status_code}")
+        return None
+
+    # Parse and return the todos
+    todos = json.loads(todos_res["result"]) if todos_res["result"] else []
+    vitals.info(f"Today's todos: {todos}")
+
+    return todos
+
+
 @app.get("/intro")
 async def get_introduction():
     """Get AI-generated assistant introduction."""
@@ -202,14 +235,15 @@ async def get_introduction():
 
     prompt = (
         "Your name is Nova, a personal virtual assistant. "
-        "Give me a brief introduction to yourself in less than 30 words."
-        "Feel free to incorporate the following information (today):"
+        "Give me a brief introduction to yourself in less than 30 words. "
+        "Feel free to incorporate the following information (today): "
+        "IMPORTANT: Output plain text only - no markdown or formatting."
     )
-    vocal_output = brain.process(today, request_type="api_data", context=prompt)
-    mouth.speak(vocal_output)
+    intro = brain.process(today, request_type="api_data", context=prompt)
+    mouth.speak(intro)
 
-    # Return a response
-    return {"result": "Test API response", "status": 200}
+    # Return the AI-generated introduction
+    return {"intro": intro, "status": 200}
 
 
 if __name__ == "__main__":

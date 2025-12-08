@@ -4,6 +4,47 @@ All notable changes to the Jarvis project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2025-12-08
+
+### Added
+
+#### Todoist Integration
+- **apis/todoist.py** - Todoist REST API v2 wrapper with direct HTTP requests
+- **`/todos` endpoint** - Get today's tasks from Todoist
+- **Tests** - 12 unit tests for TodoistAPI, 2 integration tests for endpoints
+- Todoist API token support in `secrets.json`
+
+#### Daily Briefing Improvements
+- **Unified AI prompt** - Single consolidated prompt for weather, events, and todos
+- **Intelligent summarization** - AI now prioritizes 2-3 key items instead of listing everything
+- **Nova persona** - AI assistant with personality and natural speech patterns
+- **`briefing` response key** - AI-generated text now included in `/daily` and `/intro` responses
+
+#### Developer Experience
+- **`--reload` flag** for uvicorn in `make run` - Auto-restart on code changes
+- **`autoplay` parameter** for `mouth.speak()` - Control audio playback (default: off)
+
+### Changed
+
+#### Mouth Module
+- `speak()` now defaults to `autoplay=False` - Audio file is generated but not played automatically
+- Playback speed increased from 1.25x to 1.4x for more natural listening
+
+#### Heart Module
+- `/daily` now uses single AI call instead of three separate calls
+- `/daily` response includes `briefing` key with AI-generated summary
+- `/intro` response changed from `result` to `intro` key with actual AI output
+
+#### Documentation
+- Updated `GEMINI.md` with Todoist API info, architecture, and secrets format
+- Updated `ROADMAP.md` to mark Todoist integration as complete
+
+### Fixed
+- Fixed Python 3.14 compatibility by replacing `todoist-api-python` SDK with direct REST API calls
+  (SDK's `dataclass-wizard` dependency has Python 3.14 compatibility issues)
+
+---
+
 ## [0.2.0] - 2025-12-07
 
 ### Added

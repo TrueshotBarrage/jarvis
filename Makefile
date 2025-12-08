@@ -30,9 +30,9 @@ test:
 test-cov:
 	$(PYTHON) -m pytest --cov=. --cov-report=term-missing --cov-report=html
 
-# Run the server (loads .env if present)
+# Run the server with auto-reload (loads .env if present)
 run:
-	@if [ -f .env ]; then export $$(grep -v '^#' .env | xargs) && $(PYTHON) heart.py; else $(PYTHON) heart.py; fi
+	@if [ -f .env ]; then export $$(grep -v '^#' .env | xargs) && $(PYTHON) -m uvicorn heart:app --reload; else $(PYTHON) -m uvicorn heart:app --reload; fi
 
 # Clean up generated files
 clean:

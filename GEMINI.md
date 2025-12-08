@@ -17,7 +17,9 @@ heart.py (FastAPI Server)
     ├── arms.py (HTTP Client)
     ├── mouth.py (TTS Output)
     └── apis/
-        └── weather.py (Open-Meteo)
+        ├── weather.py (Open-Meteo)
+        ├── calendar.py (Google Calendar)
+        └── todoist.py (Todoist)
 ```
 
 ### Key Design Decisions
@@ -25,7 +27,7 @@ heart.py (FastAPI Server)
 1. **Body metaphor**: Components are named after body parts (heart, brain, arms, mouth) to represent their functions
 2. **Module-level initialization**: `heart.py` initializes Brain, Arms, and Mouth at module level (before FastAPI app starts)
 3. **Async HTTP**: Uses `httpx.AsyncClient` for all external API calls
-4. **TTS with speed adjustment**: gTTS output is sped up 1.25x for natural listening
+4. **TTS with speed adjustment**: gTTS output is sped up 1.4x for natural listening
 
 ## Important Context for AI Agents
 
@@ -38,8 +40,10 @@ heart.py (FastAPI Server)
 ### API Keys & Secrets
 
 - Gemini API key is stored in `secrets.json` (gitignored)
-- Format: `{"gemini_api_key": "your-key"}`
+- Todoist API token is also stored in `secrets.json`
+- Format: `{"gemini_api_key": "your-key", "todoist_api_token": "your-token"}`
 - Brain reads from secrets.json on initialization
+- Get Todoist token from: Settings → Integrations → Developer
 
 ### Common Tasks
 
@@ -58,8 +62,8 @@ heart.py (FastAPI Server)
 
 ### Current Limitations & TODOs
 
-- **Todoist integration**: Stub exists in `arms.py`, needs API setup
-- **Google Calendar**: Stub exists, needs OAuth flow
+- **Google Calendar**: ✅ Complete - uses service account auth
+- **Todoist**: ✅ Complete - uses API token auth
 - **Wake word detection**: Planned iOS app with Picovoice Porcupine
 - **User input routing**: Commented out in `heart.py`, needs completion
 
@@ -94,10 +98,11 @@ make run  # or: python heart.py
 |------|---------|----------------------|
 | `heart.py` | FastAPI server, main entry | `app`, `lifespan()`, route handlers |
 | `brain.py` | AI processing | `Brain`, `process()`, `choose()` |
-| `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()`, `get_events()` |
+| `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()`, `get_events()`, `get_todos()` |
 | `mouth.py` | Text-to-speech | `Mouth`, `speak()` |
 | `apis/weather.py` | Weather API wrapper | `WeatherAPI`, builder pattern |
 | `apis/calendar.py` | Google Calendar API wrapper | `CalendarAPI`, service account auth |
+| `apis/todoist.py` | Todoist API wrapper | `TodoistAPI`, token auth |
 
 ### Debugging Tips
 

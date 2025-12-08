@@ -21,7 +21,7 @@ Jarvis is a voice-enabled personal assistant that provides daily briefings inclu
 ┌─────────────────────────▼───────────────────────────────────┐
 │                       heart.py                              │
 │            FastAPI Server (Central Coordinator)             │
-│  • Routes: /weather, /daily, /intro, /test                  │
+│  • Routes: /weather, /daily, /events, /todos, /intro        │
 │  • Orchestrates all components                              │
 └───────┬─────────────────┬─────────────────┬─────────────────┘
         │                 │                 │
@@ -30,17 +30,16 @@ Jarvis is a voice-enabled personal assistant that provides daily briefings inclu
 │  (Gemini AI)  │ │ (HTTP Client) │ │    (TTS)      │
 │               │ │               │ │               │
 │ • LLM calls   │ │ • Weather API │ │ • gTTS output │
-│ • Intent      │ │ • Todoist*    │ │ • Audio       │
-│   detection   │ │ • GCal*       │ │   playback    │
+│ • Intent      │ │ • Todoist API │ │ • Audio       │
+│   detection   │ │ • Calendar    │ │   playback    │
 └───────────────┘ └───────┬───────┘ └───────────────┘
                           │
                   ┌───────▼───────┐
                   │ apis/         │
                   │ weather.py    │
-                  │ (Open-Meteo)  │
+                  │ calendar.py   │
+                  │ todoist.py    │
                   └───────────────┘
-                  
-* = Planned, not yet implemented
 ```
 
 ## Components
@@ -51,7 +50,7 @@ Jarvis is a voice-enabled personal assistant that provides daily briefings inclu
 | **Brain** | `brain.py` | Gemini AI integration for LLM processing |
 | **Arms** | `arms.py` | Async HTTP client for external API calls |
 | **Mouth** | `mouth.py` | Text-to-speech via gTTS with audio playback |
-| **APIs** | `apis/` | API wrappers (currently: Open-Meteo weather) |
+| **APIs** | `apis/` | API wrappers (weather, calendar, todoist) |
 
 ## Installation
 
@@ -74,8 +73,13 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure Gemini API key (required)
-echo '{"gemini_api_key": "YOUR_GEMINI_API_KEY"}' > secrets.json
+# 4. Configure API keys (required)
+cat > secrets.json << EOF
+{
+  "gemini_api_key": "YOUR_GEMINI_API_KEY",
+  "todoist_api_token": "YOUR_TODOIST_TOKEN"
+}
+EOF
 
 # 5. Start the server
 make run
@@ -127,7 +131,8 @@ The server will start at `http://127.0.0.1:8000`.
 |----------|--------|-------------|
 | `/weather` | GET | Get current weather forecast |
 | `/events` | GET | Get today's calendar events |
-| `/daily` | GET | Run daily routine (weather + calendar + TTS) |
+| `/todos` | GET | Get today's tasks from Todoist |
+| `/daily` | GET | Run daily routine (weather + calendar + todos + AI briefing) |
 | `/intro` | GET | AI-generated assistant introduction |
 | `/test` | GET | Test external API connectivity |
 
@@ -147,9 +152,12 @@ curl http://localhost:8000/daily
 
 ```json
 {
-  "gemini_api_key": "your-google-gemini-api-key"
+  "gemini_api_key": "your-google-gemini-api-key",
+  "todoist_api_token": "your-todoist-api-token"
 }
 ```
+
+Get your Todoist API token from: **Todoist Settings → Integrations → Developer**
 
 ### Weather Location
 
@@ -165,12 +173,10 @@ weather_api.set_coordinates(lat=40.7128, lon=-74.0060)  # New York
 ### ✅ Completed
 - Weather API integration (Open-Meteo)
 - Google Calendar API integration (service account)
+- Todoist API integration (REST API v2)
 - Gemini AI integration for natural language processing
 - Text-to-speech output with speed adjustment
-- Daily routine endpoint (weather + calendar)
-
-### 🚧 In Progress
-- Todoist API integration
+- Daily routine endpoint with unified AI briefing
 
 ### 📋 Planned
 - Picovoice wake word detection
