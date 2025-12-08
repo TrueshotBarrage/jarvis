@@ -5,6 +5,18 @@
 > AI agents will need to know. This includes any changes to the project structure,
 > new dependencies, new APIs, new endpoints, new actions, new features, etc.
 
+## Project Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `README.md` | Project overview, installation, API endpoints |
+| `DEVELOPMENT.md` | Developer setup, environment, testing |
+| `CONTRIBUTING.md` | PR process, code style, testing requirements |
+| `CHANGELOG.md` | Version history, breaking changes |
+| `ROADMAP.md` | Planned features, priorities, timeline |
+
+**Always consult `ROADMAP.md` before starting new feature work.**
+
 ## Project Overview
 
 **Jarvis** is a modular, AI-powered personal assistant built with Python and FastAPI. It provides voice-enabled daily briefings including weather, todos, and calendar events.
@@ -18,6 +30,9 @@ heart.py (FastAPI Server)
     ├── mouth.py (TTS Output)
     ├── memory.py (SQLite Conversations)
     ├── cache.py (TTL Data Cache)
+    ├── context.py (AI Context)
+    ├── intent.py (Intent Detection)
+    ├── config.py (Settings)
     └── apis/
         ├── weather.py (Open-Meteo)
         ├── calendar.py (Google Calendar)
@@ -32,6 +47,7 @@ heart.py (FastAPI Server)
 4. **TTS with speed adjustment**: gTTS output is sped up 1.4x for natural listening
 5. **Conversation memory**: SQLite-based storage with time-based retrieval (last 4 hours)
 6. **Data caching**: TTL-based caching (weather 30min, events/todos 5min)
+7. **Hybrid intent detection**: Regex fast-path with LLM fallback for ambiguous queries
 
 ## Important Context for AI Agents
 

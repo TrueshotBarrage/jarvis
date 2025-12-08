@@ -4,55 +4,120 @@ This roadmap outlines planned features and improvements based on existing TODOs,
 
 ---
 
-## 🎯 Priority 1: Core Functionality Completion
+## 🎯 Priority 1: Core Functionality ✅ Complete
 
-### Todoist Integration
-**Status:** ✅ Complete  
-**Effort:** Medium
-
+### Todoist Integration ✅
 - [x] Set up Todoist API authentication
 - [x] Implement `get_todos(day)` method
-- [x] Add daily todos to `/daily` routine
 - [x] Create `/todos` endpoint
 
-### Google Calendar Integration
-**Status:** ✅ Complete  
-**Effort:** Medium
-
-- [x] Set up Google Calendar OAuth flow
+### Google Calendar Integration ✅
+- [x] Set up Google Calendar service account auth
 - [x] Implement `get_events(day)` method
-- [x] Add calendar events to `/daily` routine
-- [x] Create `/events` endpoint
+- [x] Multi-calendar support
 
-### Conversation Memory System
-**Status:** ✅ Complete (v0.4.0)  
-**Effort:** Medium
-
-- [x] SQLite-based conversation storage (`memory.py`)
-- [x] TTL-based data cache (`cache.py`)
-- [x] Persistent cache with failure fallback
+### Conversation Memory System ✅ (v0.4.0)
+- [x] SQLite-based conversation storage
+- [x] TTL-based data cache with persistence
 - [x] `/chat` endpoint for multi-turn conversations
-- [x] Context window management
 
-### Hybrid Intent Detection
-**Status:** ✅ Complete (v0.5.0)  
-**Effort:** Medium
-
-- [x] Regex fast-path for clear queries
-- [x] LLM classification with few-shot examples
-- [x] Query similarity caching
+### Hybrid Intent Detection ✅ (v0.5.0)
+- [x] Regex fast-path + LLM fallback
 - [x] Multi-intent support
-- [x] Usage logging for pattern analysis
+- [x] Query similarity caching
+
+### Environment Configuration ✅ (v0.6.0)
+- [x] Pydantic Settings with `.env` support
+- [x] Docker containerization
+- [x] CI/CD pipeline
 
 ---
 
-## 🎯 Priority 2: Voice Interface
+## 🎯 Priority 2: Personal Data Integration
+
+### Google Sheets Integration
+**Status:** Planned  
+**Effort:** Medium
+
+Read-only access to personal spreadsheets, with write as a future phase.
+
+#### Phase 1: Read Access
+- [ ] Google Sheets API setup (service account)
+- [ ] `apis/sheets.py` wrapper class
+- [ ] Generic cell/range reading
+- [ ] `/sheets/{sheet_id}` endpoint
+
+#### Phase 2: Spreadsheet Types
+- [ ] **Budget sheet** - Read spending categories, totals
+- [ ] **People catalog** - Names, numbers, notes, gift ideas
+- [ ] **Topical Bible** - Topics with verse references
+
+#### Phase 3: Write Access (Future)
+- [ ] Add expense entries to budget
+- [ ] Add verses to topical Bible categories
+- [ ] Update people catalog notes
+
+---
+
+### Calendar Intelligence System
+**Status:** Planned  
+**Effort:** Medium-High
+
+Intelligent handling of different calendar types with specialized workflows.
+
+#### Calendar Type Detection
+Intent-based classification of calendars (similar to message intent detection):
+- [ ] `calendar_classifier.py` - Detect calendar purpose from name/events
+- [ ] Categories: `birthdays`, `social`, `work`, `personal`, `recurring`
+- [ ] Config-based overrides for known calendars
+
+#### Birthday Calendar Workflows
+- [ ] Configurable reminder window (1 day, 1 week, etc.)
+- [ ] Template-based message drafting
+- [ ] Draft review before sending
+- [ ] **Future:** Platform-specific sending (iMessage, SMS, etc.)
+
+#### Social/Food Calendar Workflows
+- [ ] Extract attendee names from events
+- [ ] Link to People Catalog for context
+- [ ] "Dinner with Sarah tomorrow" style summaries
+- [ ] **Future:** Suggest conversation topics from notes
+
+#### Calendar Context in Prompts
+- [ ] Include calendar source in event context
+- [ ] Tailored AI responses based on calendar type
+- [ ] "Your birthday reminder" vs "Your meeting"
+
+---
+
+### People Catalog Integration
+**Status:** Planned  
+**Effort:** Medium
+
+Central repository of people metadata, linked to calendars and spreadsheets.
+
+#### Phase 1: Read from Sheets
+- [ ] Define People Catalog schema (name, phone, notes, gifts, etc.)
+- [ ] Query by name: "Tell me about Sarah"
+- [ ] Birthday lookup: "Whose birthday is this week?"
+
+#### Phase 2: Calendar Linking
+- [ ] Match event attendees to catalog entries
+- [ ] Enrich calendar summaries with context
+- [ ] "Lunch with Sarah (colleague, likes Thai food)"
+
+#### Phase 3: Write Access (Future)
+- [ ] "Add note about Sarah: prefers window seats"
+- [ ] "Gift idea for Mom: new cookbook"
+
+---
+
+## 🎯 Priority 3: Voice Interface
 
 ### Wake Word Detection (iOS App)
 **Status:** Planned  
 **Effort:** High
 
-Architecture:
 ```
 ┌─────────────────┐     ┌─────────────────┐
 │  iOS App        │────▶│  Jarvis Server  │
@@ -63,60 +128,54 @@ Architecture:
 
 - [ ] Create Swift iOS project
 - [ ] Integrate Picovoice Porcupine SDK
-- [ ] Implement background wake word listening
-- [ ] Build audio streaming to server
-- [ ] Handle server response playback
+- [ ] Background wake word listening
+- [ ] Audio streaming to server
 
 ### Server Audio Endpoints
-**Status:** Not started  
-**Effort:** Medium
-
-- [ ] POST `/audio/init` - Initialize audio stream
-- [ ] POST `/audio/stream` - Handle streaming audio input
+- [ ] POST `/audio/stream` - Handle audio input
 - [ ] WebSocket support for real-time audio
+- [ ] Speech-to-text integration
 
 ---
 
-## 🎯 Priority 3: Advanced Features
+## 🎯 Priority 4: Future Features
 
-### User Intent Routing
-**Status:** ✅ Complete  
-**Effort:** Medium
-
-- [x] Implement action routing based on AI classification
-- [x] Add probability-based action selection
-- [x] Hybrid regex + LLM detection
+### Message Sending Automation
+- [ ] Platform-agnostic message queue
+- [ ] Draft review workflow
+- [ ] **Future:** iMessage via AppleScript (macOS only)
+- [ ] **Future:** SMS via Twilio or similar
+- [ ] **Future:** Android intent support
 
 ### Autobudget Pipeline
-**Status:** Stub in `arms.py`  
-**Effort:** Low (external service)
+- [ ] Cloud/RPi server endpoint
+- [ ] Trigger from Jarvis command
+- [ ] `/budget` endpoint
 
-- [ ] Set up cloud/RPi server endpoint
-- [ ] Implement `run_autobudget_pipeline()` trigger
-- [ ] Create `/budget` endpoint
+### Advanced Personalization
+- [ ] Learning user preferences over time
+- [ ] Proactive suggestions based on patterns
+- [ ] Cross-calendar and cross-spreadsheet insights
 
 ---
 
-## 🔧 Technical Debt
+## 🔧 Technical Debt ✅ Complete
 
-### Code Quality
-- [x] Fix duplicate function names in `heart.py`
-- [x] Add proper type hints across all modules
-- [x] Add comprehensive docstrings
-- [x] Improve error handling
+### Code Quality ✅
+- [x] Type hints across all modules
+- [x] Comprehensive docstrings
+- [x] Error handling
 
-### Infrastructure
-- [x] Add unit tests (139 tests)
-- [x] Add integration tests
+### Infrastructure ✅
+- [x] 137 unit tests
 - [x] CI/CD pipeline
 - [x] Docker containerization
-- [ ] Environment-based configuration
+- [x] Environment-based configuration
 
-### Documentation
-- [x] Comprehensive README
+### Documentation ✅
+- [x] README, DEVELOPMENT, CONTRIBUTING
 - [x] API documentation
-- [ ] Developer setup guide
-- [ ] Contributing guidelines
+- [x] GEMINI.md for AI agents
 
 ---
 
@@ -125,5 +184,6 @@ Architecture:
 | Phase | Focus | Target |
 |-------|-------|--------|
 | 1 | Core Features | ✅ Complete |
-| 2 | Voice Interface | Q2 2025 |
-| 3 | Advanced Features | Q3 2025 |
+| 2 | Personal Data (Sheets, Calendar Intelligence) | Q1 2025 |
+| 3 | Voice Interface | Q2 2025 |
+| 4 | Future Features | Q3 2025+ |

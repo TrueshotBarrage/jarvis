@@ -13,33 +13,36 @@ Jarvis is a voice-enabled personal assistant that provides daily briefings inclu
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        main.py                              │
-│                     (Entry Point)                           │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│                       heart.py                              │
-│            FastAPI Server (Central Coordinator)             │
-│  • Routes: /weather, /daily, /events, /todos, /intro        │
-│  • Orchestrates all components                              │
-└───────┬─────────────────┬─────────────────┬─────────────────┘
-        │                 │                 │
-┌───────▼───────┐ ┌───────▼───────┐ ┌───────▼───────┐
-│   brain.py    │ │   arms.py     │ │   mouth.py    │
-│  (Gemini AI)  │ │ (HTTP Client) │ │    (TTS)      │
-│               │ │               │ │               │
-│ • LLM calls   │ │ • Weather API │ │ • gTTS output │
-│ • Intent      │ │ • Todoist API │ │ • Audio       │
-│   detection   │ │ • Calendar    │ │   playback    │
-└───────────────┘ └───────┬───────┘ └───────────────┘
-                          │
-                  ┌───────▼───────┐
-                  │ apis/         │
-                  │ weather.py    │
-                  │ calendar.py   │
-                  │ todoist.py    │
-                  └───────────────┘
+┌────────────────────────────────────────────────────────┐
+│                       heart.py                         │
+│            FastAPI Server (Central Coordinator)        │
+│  • Routes: /chat, /weather, /daily, /events, /todos    │
+│  • Orchestrates all components                         │
+└────────┬─────────────────┬─────────────────┬───────────┘
+         │                 │                 │
+ ┌───────▼───────┐ ┌───────▼───────┐ ┌───────▼───────┐
+ │   brain.py    │ │   arms.py     │ │   mouth.py    │
+ │  (Gemini AI)  │ │ (HTTP Client) │ │    (TTS)      │
+ │               │ │               │ │               │
+ │ • LLM calls   │ │ • Weather API │ │ • gTTS output │
+ │ • Chat        │ │ • Todoist API │ │ • Audio       │
+ │               │ │ • Calendar    │ │   playback    │
+ └───────────────┘ └───────┬───────┘ └───────────────┘
+                           │
+ ┌─────────────────────────┼─────────────────────────┐
+ │                         │                         │
+ │  ┌───────────────┐ ┌────▼────┐ ┌───────────────┐  │
+ │  │ apis/         │ │memory.py│ │ intent.py     │  │
+ │  │ weather.py    │ │ (SQLite)│ │ (Detection)   │  │
+ │  │ calendar.py   │ ├─────────┤ ├───────────────┤  │
+ │  │ todoist.py    │ │cache.py │ │ context.py    │  │
+ │  └───────────────┘ │ (TTL)   │ │ (AI Context)  │  │
+ │                    └─────────┘ └───────────────┘  │
+ │                                                   │
+ │  ┌─────────────────────────────────────────────┐  │
+ │  │ config.py (Pydantic Settings, .env support) │  │
+ │  └─────────────────────────────────────────────┘  │
+ └───────────────────────────────────────────────────┘
 ```
 
 ## Components
@@ -50,6 +53,11 @@ Jarvis is a voice-enabled personal assistant that provides daily briefings inclu
 | **Brain** | `brain.py` | Gemini AI integration for LLM processing |
 | **Arms** | `arms.py` | Async HTTP client for external API calls |
 | **Mouth** | `mouth.py` | Text-to-speech via gTTS with audio playback |
+| **Memory** | `memory.py` | SQLite conversation storage |
+| **Cache** | `cache.py` | TTL-based data caching |
+| **Intent** | `intent.py` | Hybrid regex + LLM intent detection |
+| **Context** | `context.py` | AI context and persona management |
+| **Config** | `config.py` | Centralized settings with `.env` support |
 | **APIs** | `apis/` | API wrappers (weather, calendar, todoist) |
 
 ## Installation
