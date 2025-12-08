@@ -1,23 +1,37 @@
 """Tests for the Context module."""
 
+import os
+import tempfile
 from datetime import datetime
+
+import pytest
 
 from cache import Cache
 from context import Context, ContextProvider
 
 
+@pytest.fixture
+def temp_db():
+    """Create a temporary database for testing."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    yield db_path
+    if os.path.exists(db_path):
+        os.remove(db_path)
+
+
 class TestContextInit:
     """Test suite for Context initialization."""
 
-    def test_initializes_with_cache(self):
+    def test_initializes_with_cache(self, temp_db):
         """Test Context initializes with a Cache instance."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
         assert ctx.cache is cache
 
-    def test_registers_default_providers(self):
+    def test_registers_default_providers(self, temp_db):
         """Test Context registers default providers on init."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
         assert "current_time" in ctx._providers
 
@@ -25,9 +39,9 @@ class TestContextInit:
 class TestContextBuild:
     """Test suite for Context.build method."""
 
-    def test_includes_current_time(self):
+    def test_includes_current_time(self, temp_db):
         """Test build includes current time."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
 
         result = ctx.build()
@@ -36,9 +50,9 @@ class TestContextBuild:
         # Should have a reasonable date format
         assert datetime.now().strftime("%B") in result  # Month name
 
-    def test_includes_cached_weather(self):
+    def test_includes_cached_weather(self, temp_db):
         """Test build includes cached weather data."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         cache.set("weather", {"result": '{"temp": 72}'})
         ctx = Context(cache)
 
@@ -46,9 +60,9 @@ class TestContextBuild:
 
         assert "WEATHER:" in result
 
-    def test_includes_cached_events(self):
+    def test_includes_cached_events(self, temp_db):
         """Test build includes cached events data."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         cache.set("events", {"result": '[{"title": "Meeting"}]'})
         ctx = Context(cache)
 
@@ -56,9 +70,9 @@ class TestContextBuild:
 
         assert "EVENTS:" in result
 
-    def test_includes_cached_todos(self):
+    def test_includes_cached_todos(self, temp_db):
         """Test build includes cached todos data."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         cache.set("todos", {"result": '[{"task": "Buy milk"}]'})
         ctx = Context(cache)
 
@@ -86,9 +100,9 @@ class TestContextProvider:
 class TestContextRegister:
     """Test suite for Context.register method."""
 
-    def test_register_provider(self):
+    def test_register_provider(self, temp_db):
         """Test registering a custom provider."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
 
         provider = ContextProvider(
@@ -104,9 +118,9 @@ class TestContextRegister:
 class TestContextGet:
     """Test suite for Context.get method."""
 
-    def test_get_returns_none_when_not_set(self):
+    def test_get_returns_none_when_not_set(self, temp_db):
         """Test get returns None for missing data."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
 
         assert ctx.get("nonexistent") is None
@@ -115,9 +129,9 @@ class TestContextGet:
 class TestContextBuildSystemPrompt:
     """Test suite for Context.build_system_prompt method."""
 
-    def test_includes_identity(self):
+    def test_includes_identity(self, temp_db):
         """Test build_system_prompt includes Nova's identity."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
 
         result = ctx.build_system_prompt()
@@ -125,18 +139,18 @@ class TestContextBuildSystemPrompt:
         assert "Nova" in result
         assert "IDENTITY" in result
 
-    def test_includes_capabilities(self):
+    def test_includes_capabilities(self, temp_db):
         """Test build_system_prompt includes capabilities."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
 
         result = ctx.build_system_prompt()
 
         assert "CAPABILITIES" in result
 
-    def test_includes_data_context_by_default(self):
+    def test_includes_data_context_by_default(self, temp_db):
         """Test build_system_prompt includes data context by default."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
 
         result = ctx.build_system_prompt()
@@ -144,9 +158,9 @@ class TestContextBuildSystemPrompt:
         assert "CONTEXT:" in result
         assert "CURRENT TIME:" in result
 
-    def test_excludes_data_context_when_disabled(self):
+    def test_excludes_data_context_when_disabled(self, temp_db):
         """Test build_system_prompt can exclude data context."""
-        cache = Cache()
+        cache = Cache(db_path=temp_db)
         ctx = Context(cache)
 
         result = ctx.build_system_prompt(include_data_context=False)

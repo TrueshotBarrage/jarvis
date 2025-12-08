@@ -181,3 +181,79 @@ class TestIntentDetectorLLMClassify:
         result = detector._llm_classify("test")
 
         assert result == {}
+
+
+class TestIntentCache:
+    """Test suite for IntentCache class."""
+
+    def test_stores_and_retrieves_exact_match(self):
+        """Test cache stores and retrieves exact matches."""
+        from intent import IntentCache
+
+        cache = IntentCache()
+        cache.store("What's the weather?", {Intent.WEATHER: 0.9})
+
+        result = cache.get("What's the weather?")
+
+        assert result is not None
+        assert result[Intent.WEATHER] == 0.9
+
+    def test_retrieves_similar_query(self):
+        """Test cache returns similar queries."""
+        from intent import IntentCache
+
+        cache = IntentCache(similarity_threshold=0.8)
+        cache.store("What's the weather today?", {Intent.WEATHER: 0.9})
+
+        # Similar query (only "like" changed to "today")
+        result = cache.get("What's the weather today")
+
+        assert result is not None
+        assert result[Intent.WEATHER] == 0.9
+
+    def test_returns_none_for_dissimilar_query(self):
+        """Test cache returns None for dissimilar queries."""
+        from intent import IntentCache
+
+        cache = IntentCache()
+        cache.store("What's the weather?", {Intent.WEATHER: 0.9})
+
+        result = cache.get("Do I have meetings?")
+
+        assert result is None
+
+    def test_clear_removes_all_entries(self):
+        """Test clear removes all cached entries."""
+        from intent import IntentCache
+
+        cache = IntentCache()
+        cache.store("query1", {Intent.WEATHER: 0.9})
+        cache.store("query2", {Intent.EVENTS: 0.8})
+
+        count = cache.clear()
+
+        assert count == 2
+        assert cache.get("query1") is None
+
+
+class TestIntentDetectorCache:
+    """Test suite for IntentDetector cache integration."""
+
+    def test_uses_cache_on_second_similar_query(self):
+        """Test detector uses cache for similar queries."""
+        mock_brain = MagicMock()
+        mock_brain.ai.generate_content.return_value.text = (
+            '{"weather": 0.9, "events": 0.0, "todos": 0.0, "refresh": 0.0}'
+        )
+        detector = IntentDetector(mock_brain)
+
+        # First call - uses LLM
+        detector.detect("Hello there!")
+        first_call_count = mock_brain.ai.generate_content.call_count
+
+        # Second call with exact same query - should use cache
+        detector.detect("Hello there!")
+        second_call_count = mock_brain.ai.generate_content.call_count
+
+        # LLM should only be called once (first time)
+        assert second_call_count == first_call_count

@@ -3,6 +3,11 @@
 This module provides intelligent intent detection using a two-step approach:
 1. Fast regex matching for clear, high-confidence cases
 2. LLM classification fallback for ambiguous queries
+
+Improvements include:
+- Few-shot examples for better LLM accuracy
+- Usage logging for pattern analysis
+- Query similarity caching to reduce LLM calls
 """
 
 from __future__ import annotations
@@ -10,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from difflib import SequenceMatcher
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -28,10 +34,9 @@ class Intent(Enum):
 
 
 # Regex patterns for fast intent matching
-# Moved from heart.py and enhanced
 INTENT_PATTERNS: dict[Intent, re.Pattern] = {
     Intent.WEATHER: re.compile(
-        r"\b(weather|temperature|rain|forecast|cold|hot|sunny|cloudy|umbrella|degrees)\b",
+        r"\b(weather|temperature|rain|forecast|cold|hot|sunny|cloudy|umbrella|degrees|jacket)\b",
         re.IGNORECASE,
     ),
     Intent.EVENTS: re.compile(
@@ -51,6 +56,105 @@ INTENT_PATTERNS: dict[Intent, re.Pattern] = {
 # Configuration
 CONFIDENCE_THRESHOLD = 0.3  # Minimum probability to include intent
 REGEX_HIGH_CONFIDENCE = 0.8  # Skip LLM if regex confidence >= this
+CACHE_SIMILARITY_THRESHOLD = 0.85  # Similarity ratio for cache hits
+
+# Few-shot examples for LLM classification
+FEW_SHOT_EXAMPLES = """EXAMPLES:
+User: "What's the weather like?"
+→ {"weather": 0.95, "events": 0.0, "todos": 0.0, "refresh": 0.0}
+
+User: "Do I have any meetings tomorrow?"
+→ {"weather": 0.0, "events": 0.95, "todos": 0.0, "refresh": 0.0}
+
+User: "Do I need an umbrella for my meeting?"
+→ {"weather": 0.8, "events": 0.6, "todos": 0.0, "refresh": 0.0}
+
+User: "What tasks do I need to finish today?"
+→ {"weather": 0.0, "events": 0.25, "todos": 0.95, "refresh": 0.0}
+
+User: "Get me the latest weather"
+→ {"weather": 0.9, "events": 0.0, "todos": 0.0, "refresh": 0.7}
+
+User: "Am I free at 3pm?"
+→ {"weather": 0.0, "events": 0.9, "todos": 0.0, "refresh": 0.0}
+
+User: "Should I bring a jacket to my appointment?"
+→ {"weather": 0.85, "events": 0.7, "todos": 0.0, "refresh": 0.0}
+
+User: "Refresh my calendar"
+→ {"weather": 0.0, "events": 0.5, "todos": 0.0, "refresh": 0.95}
+"""
+
+
+class IntentCache:
+    """Cache for LLM intent classifications.
+
+    Uses query similarity matching to avoid redundant LLM calls
+    for similar queries.
+    """
+
+    def __init__(self, similarity_threshold: float = CACHE_SIMILARITY_THRESHOLD):
+        """Initialize the cache.
+
+        Args:
+            similarity_threshold: Minimum similarity ratio for cache hits.
+        """
+        self._cache: dict[str, dict[Intent, float]] = {}
+        self._similarity_threshold = similarity_threshold
+        self.logger = logging.getLogger(__name__)
+
+    def _normalize(self, query: str) -> str:
+        """Normalize query for comparison."""
+        return query.lower().strip()
+
+    def _similarity(self, a: str, b: str) -> float:
+        """Calculate similarity ratio between two strings."""
+        return SequenceMatcher(None, a, b).ratio()
+
+    def get(self, query: str) -> dict[Intent, float] | None:
+        """Get cached classification for a similar query.
+
+        Args:
+            query: The user's query.
+
+        Returns:
+            Cached classification if similar query found, else None.
+        """
+        normalized = self._normalize(query)
+
+        # Exact match
+        if normalized in self._cache:
+            self.logger.debug(f"Cache hit (exact): '{query[:30]}...'")
+            return self._cache[normalized]
+
+        # Fuzzy match
+        for cached_query, result in self._cache.items():
+            if self._similarity(normalized, cached_query) >= self._similarity_threshold:
+                self.logger.debug(f"Cache hit (similar): '{query[:30]}...'")
+                return result
+
+        return None
+
+    def store(self, query: str, result: dict[Intent, float]) -> None:
+        """Store classification result in cache.
+
+        Args:
+            query: The user's query.
+            result: The classification result.
+        """
+        normalized = self._normalize(query)
+        self._cache[normalized] = result
+        self.logger.debug(f"Cached classification: '{query[:30]}...'")
+
+    def clear(self) -> int:
+        """Clear all cached entries.
+
+        Returns:
+            Number of entries cleared.
+        """
+        count = len(self._cache)
+        self._cache.clear()
+        return count
 
 
 class IntentDetector:
@@ -59,8 +163,14 @@ class IntentDetector:
     Uses fast regex matching for clear cases, falls back to LLM
     classification for ambiguous or complex queries.
 
+    Features:
+    - Few-shot examples for accurate LLM classification
+    - Query similarity caching to reduce LLM calls
+    - Usage logging for pattern analysis
+
     Attributes:
         brain: The Brain instance for LLM classification.
+        cache: Intent classification cache.
         logger: Module logger instance.
     """
 
@@ -71,6 +181,7 @@ class IntentDetector:
             brain: The Brain instance for LLM calls.
         """
         self.brain = brain
+        self.cache = IntentCache()
         self.logger = logging.getLogger(__name__)
 
     def detect(self, message: str) -> set[Intent]:
@@ -78,7 +189,8 @@ class IntentDetector:
 
         Uses hybrid approach:
         1. Try regex matching first (fast path)
-        2. If ambiguous/unclear, use LLM classification
+        2. If ambiguous/unclear, check cache for similar queries
+        3. If cache miss, use LLM classification
 
         Args:
             message: The user's message.
@@ -95,28 +207,65 @@ class IntentDetector:
             intents = {
                 intent for intent, conf in regex_results.items() if conf >= CONFIDENCE_THRESHOLD
             }
-            self.logger.info(f"Fast path intents: {intents}")
+            self.logger.info(
+                f"Intent detection [regex]: '{message[:50]}' → {[i.value for i in intents]}"
+            )
             return intents if intents else {Intent.GENERAL}
 
-        # Step 2: LLM classification
+        # Step 2: Check cache for similar queries
+        cached_results = self.cache.get(message)
+        if cached_results is not None:
+            # Combine with regex results
+            combined = self._combine_results(regex_results, cached_results)
+            intents = {intent for intent, conf in combined.items() if conf >= CONFIDENCE_THRESHOLD}
+            self.logger.info(
+                f"Intent detection [cache]: '{message[:50]}' → {[i.value for i in intents]}"
+            )
+            return intents if intents else {Intent.GENERAL}
+
+        # Step 3: LLM classification
         self.logger.info("Using LLM for intent classification")
         llm_results = self._llm_classify(message)
         self.logger.debug(f"LLM results: {llm_results}")
 
-        # Combine regex and LLM results, taking max confidence
+        # Store in cache for future similar queries
+        if llm_results:
+            self.cache.store(message, llm_results)
+
+        # Combine regex and LLM results
+        combined = self._combine_results(regex_results, llm_results)
+
+        # Filter by threshold
+        intents = {intent for intent, conf in combined.items() if conf >= CONFIDENCE_THRESHOLD}
+
+        # Log for pattern analysis
+        self.logger.info(
+            f"Intent detection [llm]: '{message[:50]}' → {[i.value for i in intents]} "
+            f"(raw: {{{', '.join(f'{k.value}: {v:.2f}' for k, v in combined.items() if v > 0)}}})"
+        )
+
+        return intents if intents else {Intent.GENERAL}
+
+    def _combine_results(
+        self, regex_results: dict[Intent, float], other_results: dict[Intent, float]
+    ) -> dict[Intent, float]:
+        """Combine results from multiple sources, taking max confidence.
+
+        Args:
+            regex_results: Results from regex matching.
+            other_results: Results from cache or LLM.
+
+        Returns:
+            Combined results with max confidence per intent.
+        """
         combined = {}
         for intent in Intent:
             if intent == Intent.GENERAL:
                 continue
             regex_conf = regex_results.get(intent, 0.0)
-            llm_conf = llm_results.get(intent, 0.0)
-            combined[intent] = max(regex_conf, llm_conf)
-
-        # Filter by threshold
-        intents = {intent for intent, conf in combined.items() if conf >= CONFIDENCE_THRESHOLD}
-
-        self.logger.info(f"Final intents: {intents}")
-        return intents if intents else {Intent.GENERAL}
+            other_conf = other_results.get(intent, 0.0)
+            combined[intent] = max(regex_conf, other_conf)
+        return combined
 
     def _regex_match(self, message: str) -> dict[Intent, float]:
         """Match message against regex patterns.
@@ -168,10 +317,7 @@ class IntentDetector:
     def _llm_classify(self, message: str) -> dict[Intent, float]:
         """Use LLM to classify intent with probability distribution.
 
-        Note: This is a first iteration. Future improvements could include:
-        - Few-shot examples for better accuracy
-        - Fine-tuned prompt based on error analysis
-        - Caching of similar queries
+        Uses few-shot examples for improved accuracy.
 
         Args:
             message: The user's message.
@@ -187,12 +333,10 @@ Intents:
 - todos: Questions about tasks, to-do items, reminders
 - refresh: Requests to update/refresh data
 
-User message: "{message}"
-
-Respond with ONLY a JSON object, no other text. Example:
-{{"weather": 0.8, "events": 0.2, "todos": 0.0, "refresh": 0.0}}
-
-JSON:"""
+{FEW_SHOT_EXAMPLES}
+NOW CLASSIFY:
+User: "{message}"
+→ """
 
         try:
             response = self.brain.ai.generate_content(prompt)
@@ -200,7 +344,6 @@ JSON:"""
 
             # Extract JSON from response (handle potential markdown formatting)
             if "```" in response_text:
-                # Extract from code block
                 json_match = re.search(r"```(?:json)?\s*(.*?)\s*```", response_text, re.DOTALL)
                 if json_match:
                     response_text = json_match.group(1)
