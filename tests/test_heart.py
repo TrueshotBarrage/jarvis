@@ -108,3 +108,61 @@ class TestHeartAPIIntegration:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == 200
+
+    @pytest.mark.asyncio
+    async def test_events_endpoint_success(self, app_client, mock_components):  # noqa: ARG002
+        """Test /events endpoint returns calendar events."""
+        import heart
+
+        with patch.object(heart.arms, "get_events", new_callable=AsyncMock) as mock_get_events:
+            mock_get_events.return_value = {
+                "result": '[{"id": "1", "summary": "Team Meeting"}]',
+                "status": 200,
+            }
+
+            async with app_client as client:
+                response = await client.get("/events")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert isinstance(data, list)
+
+    @pytest.mark.asyncio
+    async def test_events_endpoint_api_error(self, app_client, mock_components):  # noqa: ARG002
+        """Test /events endpoint handles API errors gracefully."""
+        import heart
+
+        with patch.object(heart.arms, "get_events", new_callable=AsyncMock) as mock_get_events:
+            mock_get_events.return_value = {"result": None, "status": 500}
+
+            async with app_client as client:
+                response = await client.get("/events")
+
+            assert response.json() is None
+
+    @pytest.mark.asyncio
+    async def test_daily_includes_events(self, app_client, mock_components):  # noqa: ARG002
+        """Test /daily endpoint fetches both weather and events."""
+        import heart
+
+        with (
+            patch.object(heart.arms, "get_weather", new_callable=AsyncMock) as mock_weather,
+            patch.object(heart.arms, "get_events", new_callable=AsyncMock) as mock_events,
+        ):
+            mock_weather.return_value = {
+                "result": '{"current": {"temperature_2m": 65}}',
+                "status": 200,
+            }
+            mock_events.return_value = {
+                "result": '[{"summary": "Meeting"}]',
+                "status": 200,
+            }
+
+            async with app_client as client:
+                response = await client.get("/daily")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert "weather" in data
+            assert "events" in data
+            mock_events.assert_called_once()

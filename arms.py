@@ -4,6 +4,7 @@ This module provides async HTTP capabilities for reaching out to external
 services like weather APIs, Todoist, and Google Calendar.
 """
 
+import json
 import logging
 from typing import Any, TypedDict
 
@@ -126,17 +127,20 @@ class Arms:
         """Fetch calendar events for a specific day from Google Calendar.
 
         Args:
-            day: Date string for which to fetch events.
+            day: Date string in ISO format (YYYY-MM-DD) for which to fetch events.
 
         Returns:
-            APIResponse containing calendar events data.
-
-        TODO:
-            Set up Google Calendar OAuth flow and API integration.
+            APIResponse containing calendar events data as JSON.
         """
-        gcal_url = f"/route/to/gcal/api/{day}"
-        # TODO: Set up Google Calendar API, including params={API key, scopes, ...}
-        return await self.get(gcal_url)
+        try:
+            from apis.calendar import CalendarAPI, CalendarAPIError
+
+            calendar_api = CalendarAPI()
+            events = calendar_api.get_events(day)
+            return {"result": json.dumps(events), "status": 200}
+        except CalendarAPIError as e:
+            self.logger.error(f"Calendar API error: {e}")
+            return {"result": None, "status": 500}
 
     async def run_autobudget_pipeline(self) -> APIResponse:
         """Trigger the autobudget pipeline on external server.

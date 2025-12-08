@@ -56,26 +56,60 @@ Jarvis is a voice-enabled personal assistant that provides daily briefings inclu
 ## Installation
 
 ### Prerequisites
-- Python 3.10+
-- A Google Gemini API key
+- Python 3.13+
+- A [Google Gemini API key](https://aistudio.google.com/app/apikey)
+- (Optional) Google Cloud project for Calendar integration
 
-### Setup
+### Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/jarvis.git
+# 1. Clone the repository
+git clone https://github.com/TrueshotBarrage/jarvis.git
 cd jarvis
 
-# Create virtual environment
+# 2. Create and activate virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# Configure secrets
-echo '{"gemini_api_key": "YOUR_API_KEY"}' > secrets.json
+# 4. Configure Gemini API key (required)
+echo '{"gemini_api_key": "YOUR_GEMINI_API_KEY"}' > secrets.json
+
+# 5. Start the server
+make run
 ```
+
+### Google Calendar Setup (Optional)
+
+To enable calendar events in daily briefings:
+
+1. **Create Google Cloud Project**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project and enable the **Google Calendar API**
+
+2. **Create Service Account**
+   - Go to APIs & Services → Credentials → Create Credentials → Service Account
+   - Download the JSON key file and save as `google_credentials.json` in project root
+
+3. **Share Your Calendar**
+   - Open Google Calendar → Settings → Your calendar → Share with specific people
+   - Add the service account email (from `client_email` in your JSON file)
+   - Grant "See all event details" permission
+
+4. **Configure Environment Variable**
+   ```bash
+   cp .env.example .env
+   # Edit .env and set your calendar email:
+   # GOOGLE_CALENDAR_ID=your.email@gmail.com
+   ```
+
+5. **Run with Calendar**
+   ```bash
+   export GOOGLE_CALENDAR_ID="your.email@gmail.com"
+   make run
+   ```
 
 ## Usage
 
@@ -92,7 +126,8 @@ The server will start at `http://127.0.0.1:8000`.
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/weather` | GET | Get current weather forecast |
-| `/daily` | GET | Run daily routine (weather + TTS output) |
+| `/events` | GET | Get today's calendar events |
+| `/daily` | GET | Run daily routine (weather + calendar + TTS) |
 | `/intro` | GET | AI-generated assistant introduction |
 | `/test` | GET | Test external API connectivity |
 
@@ -129,13 +164,13 @@ weather_api.set_coordinates(lat=40.7128, lon=-74.0060)  # New York
 
 ### ✅ Completed
 - Weather API integration (Open-Meteo)
+- Google Calendar API integration (service account)
 - Gemini AI integration for natural language processing
 - Text-to-speech output with speed adjustment
-- Daily routine endpoint
+- Daily routine endpoint (weather + calendar)
 
 ### 🚧 In Progress
 - Todoist API integration
-- Google Calendar API integration
 
 ### 📋 Planned
 - Picovoice wake word detection

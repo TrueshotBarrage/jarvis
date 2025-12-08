@@ -12,6 +12,8 @@ dependencies = [
     "gTTS==2.5.4",
     "pydub==0.25.1",
     "audioop-lts",  # Required for pydub on Python 3.13+
+    "google-api-python-client==2.154.0",
+    "google-auth==2.36.0",
 ]
 
 [project.optional-dependencies]

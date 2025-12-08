@@ -16,13 +16,13 @@ This roadmap outlines planned features and improvements based on existing TODOs,
 - [ ] Create `/todos` endpoint
 
 ### Google Calendar Integration
-**Status:** Stub exists in `arms.py`  
+**Status:** ✅ Complete  
 **Effort:** Medium
 
-- [ ] Set up Google Calendar OAuth flow
-- [ ] Implement `get_events(day)` method
-- [ ] Add calendar events to `/daily` routine
-- [ ] Create `/events` endpoint
+- [x] Set up Google Calendar OAuth flow
+- [x] Implement `get_events(day)` method
+- [x] Add calendar events to `/daily` routine
+- [x] Create `/events` endpoint
 
 ---
 

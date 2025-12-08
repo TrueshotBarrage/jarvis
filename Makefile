@@ -30,9 +30,9 @@ test:
 test-cov:
 	$(PYTHON) -m pytest --cov=. --cov-report=term-missing --cov-report=html
 
-# Run the server
+# Run the server (loads .env if present)
 run:
-	$(PYTHON) heart.py
+	@if [ -f .env ]; then export $$(grep -v '^#' .env | xargs) && $(PYTHON) heart.py; else $(PYTHON) heart.py; fi
 
 # Clean up generated files
 clean:

@@ -102,9 +102,9 @@ async def get_weather():
 
 @app.get("/daily")
 async def run_daily_routine():
-    """Run daily routine: fetch weather and speak summary aloud."""
-    # Fetch today's weather, todos, and calendar events
-    datetime.date.today()
+    """Run daily routine: fetch weather and calendar events, speak summary aloud."""
+    # Get today's date
+    today = datetime.date.today().isoformat()
 
     # Invoke the weather API
     weather_res = await arms.get_weather()
@@ -113,37 +113,73 @@ async def run_daily_routine():
     api_status_code = weather_res["status"]
     if api_status_code != 200:
         vitals.error(f"Error fetching weather: {api_status_code}")
-        return None
+        weather = None
+    else:
+        weather = json.loads(weather_res["result"])
+        vitals.info(f"Today's weather: {weather}")
 
-    # Parse the weather data
-    weather = weather_res["result"] = json.loads(weather_res["result"])
-
-    # Output the weather
-    vitals.info(f"Today's weather: {weather}")
+    # Fetch calendar events
+    events_res = await arms.get_events(today)
+    if events_res["status"] == 200 and events_res["result"]:
+        events = json.loads(events_res["result"])
+        vitals.info(f"Today's events: {len(events)} events found")
+    else:
+        events = []
+        vitals.warning("Could not fetch calendar events")
 
     # todos_today = await arms.get_todos(today)
-    # events_today = await arms.get_events(today)
 
-    # In the beginning was the Word! - These are side effects
+    # Generate and speak weather summary
+    if weather:
+        weather_prompt_context = (
+            "Given the weather API response data, generate a concise and engaging "
+            "message suitable for a personal assistant to read aloud. The message should "
+            "include current temperature, chance of rain, and any notable weather events "
+            "for today. Include a brief description of the highs and lows of the daily "
+            "weather, if it exists, as well as sunrise and sunset times. "
+            "Ensure the message is friendly and easy to understand."
+        )
+        weather_output = brain.process(
+            weather, request_type="api_data", context=weather_prompt_context
+        )
+        mouth.speak(weather_output)
 
-    # Example weather API response:
-    # {"result":{"latitude":40.78858,"longitude":-73.96611,"generationtime_ms":0.07402896881103516,"utc_offset_seconds":-14400,"timezone":"America/New_York","timezone_abbreviation":"EDT","elevation":45.0,"current_units":{"time":"iso8601","interval":"seconds","temperature_2m":"°F","precipitation":"mm"},"current":{"time":"2024-10-31T01:00","interval":900,"temperature_2m":60.7,"precipitation":0.0},"daily_units":{"time":"iso8601","temperature_2m_max":"°F","temperature_2m_min":"°F","sunrise":"iso8601","sunset":"iso8601","precipitation_hours":"h"},"daily":{"time":["2024-10-31","2024-11-01","2024-11-02","2024-11-03","2024-11-04","2024-11-05","2024-11-06"],"temperature_2m_max":[81.4,76.0,60.4,60.1,55.1,58.4,74.9],"temperature_2m_min":[54.3,54.2,47.7,48.6,50.7,49.9,58.7],"sunrise":["2024-10-31T07:26","2024-11-01T07:27","2024-11-02T07:28","2024-11-03T07:29","2024-11-04T07:30","2024-11-05T07:31","2024-11-06T07:33"],"sunset":["2024-10-31T17:52","2024-11-01T17:51","2024-11-02T17:50","2024-11-03T17:49","2024-11-04T17:48","2024-11-05T17:46","2024-11-06T17:45"],"precipitation_hours":[0.0,0.0,0.0,1.0,2.0,12.0,0.0]}},"status":200}
-    weather_prompt_context = (
-        "Given the weather API response data, generate a concise and engaging "
-        "message suitable for a personal assistant to read aloud. The message should "
-        "include current temperature, chance of rain, and any notable weather events "
-        "for today. Include a brief description of the highs and lows of the daily "
-        "weather, if it exists, as well as sunrise and sunset times. "
-        "Ensure the message is friendly and easy to understand."
-    )
-    vocal_output = brain.process(weather, request_type="api_data", context=weather_prompt_context)
-    mouth.speak(vocal_output)
+    # Generate and speak calendar summary
+    if events:
+        events_prompt_context = (
+            "Given the calendar events data, generate a concise and engaging "
+            "message suitable for a personal assistant to read aloud. Summarize "
+            "the events for today including their times and titles. If there are "
+            "many events, prioritize the most important ones. Keep it brief and "
+            "easy to understand."
+        )
+        events_output = brain.process(
+            events, request_type="api_data", context=events_prompt_context
+        )
+        mouth.speak(events_output)
 
-    # mouth.speak(todos_today)
-    # mouth.speak(events_today)
+    # Return full response
+    return {"weather": weather, "events": events, "status": 200}
 
-    # Return a response
-    return weather_res
+
+@app.get("/events")
+async def get_events():
+    """Get today's calendar events from Google Calendar."""
+    today = datetime.date.today().isoformat()
+
+    events_res = await arms.get_events(today)
+
+    # Check if the API call was successful
+    api_status_code = events_res["status"]
+    if api_status_code != 200:
+        vitals.error(f"Error fetching events: {api_status_code}")
+        return None
+
+    # Parse and return the events
+    events = json.loads(events_res["result"]) if events_res["result"] else []
+    vitals.info(f"Today's events: {events}")
+
+    return events
 
 
 @app.get("/intro")

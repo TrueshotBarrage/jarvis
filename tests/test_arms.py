@@ -117,3 +117,39 @@ class TestArms:
             assert "api.open-meteo.com" in call_args
 
         await arms.stop()
+
+    @pytest.mark.asyncio
+    async def test_get_events_success(self):
+        """Test get_events returns formatted calendar events."""
+        from apis.calendar import CalendarAPI
+
+        arms = Arms()
+        arms.start()
+
+        mock_events = [
+            {"id": "1", "summary": "Meeting", "start": "10:00", "end": "11:00"},
+        ]
+
+        with patch.object(CalendarAPI, "get_events", return_value=mock_events):
+            result = await arms.get_events("2025-01-15")
+
+            assert result["status"] == 200
+            assert '"Meeting"' in result["result"]
+
+        await arms.stop()
+
+    @pytest.mark.asyncio
+    async def test_get_events_handles_error(self):
+        """Test get_events handles CalendarAPIError gracefully."""
+        from apis.calendar import CalendarAPI, CalendarAPIError
+
+        arms = Arms()
+        arms.start()
+
+        with patch.object(CalendarAPI, "get_events", side_effect=CalendarAPIError("Test error")):
+            result = await arms.get_events("2025-01-15")
+
+            assert result["status"] == 500
+            assert result["result"] is None
+
+        await arms.stop()

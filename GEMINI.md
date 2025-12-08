@@ -94,9 +94,10 @@ make run  # or: python heart.py
 |------|---------|----------------------|
 | `heart.py` | FastAPI server, main entry | `app`, `lifespan()`, route handlers |
 | `brain.py` | AI processing | `Brain`, `process()`, `choose()` |
-| `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()` |
+| `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()`, `get_events()` |
 | `mouth.py` | Text-to-speech | `Mouth`, `speak()` |
 | `apis/weather.py` | Weather API wrapper | `WeatherAPI`, builder pattern |
+| `apis/calendar.py` | Google Calendar API wrapper | `CalendarAPI`, service account auth |
 
 ### Debugging Tips
 

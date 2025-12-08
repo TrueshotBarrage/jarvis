@@ -1,5 +1,7 @@
 # Secrets
 secrets.json
+google_credentials.json
+.env
 
 # Python
 venv/
