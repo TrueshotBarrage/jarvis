@@ -157,6 +157,43 @@ curl -X POST http://localhost:8000/chat \
   -d '{"message": "Will I need an umbrella?"}'
 ```
 
+### How Intent Detection Works
+
+Nova uses a **hybrid intent detection** system to understand your requests:
+
+```
+User: "What meetings do I have today?"
+              │
+              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. Regex Fast Path                                              │
+│    → "meetings" matches EVENTS pattern → confidence 0.7         │
+└─────────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. Data Fetch                                                   │
+│    → Intent.EVENTS detected → fetch calendar via cache          │
+│    → Events: [{title: "Team Standup", time: "10:00 AM"}, ...]   │
+└─────────────────────────────────────────────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. AI Response                                                  │
+│    → Context includes current time + events                     │
+│    → Nova: "You have 3 meetings today. Your next one is..."     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+| Intent | Triggers | Example |
+|--------|----------|---------|
+| Weather | weather, rain, temperature, umbrella | "Do I need a jacket?" |
+| Events | calendar, meeting, schedule | "What's on my calendar?" |
+| Todos | todo, task, reminder | "What tasks do I have?" |
+| Refresh | refresh, update, check again | "Refresh my calendar" |
+
+For ambiguous queries like *"Do I need an umbrella for my meeting?"*, Nova uses LLM classification to detect **both** weather and events intents.
+
 ## Configuration
 
 ### secrets.json

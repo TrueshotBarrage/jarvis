@@ -7,7 +7,6 @@ Brain (AI), Arms (HTTP client), Mouth (TTS), Memory, and Cache.
 import datetime
 import json
 import logging
-import re
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,6 +16,7 @@ from arms import Arms
 from brain import Brain
 from cache import Cache
 from context import Context
+from intent import Intent, IntentDetector
 from memory import Memory
 from mouth import Mouth
 
@@ -46,6 +46,7 @@ mouth = unmute()
 memory = Memory()
 cache = Cache()
 context_mgr = Context(cache)
+intent_detector = IntentDetector(brain)
 vitals.info("All systems functional. Jarvis is ready! How is your day, sir?")
 
 jarvis_actions = {
@@ -55,14 +56,6 @@ jarvis_actions = {
     "daily_routine": "/daily",
     "introduction": "/intro",
     "chat": "/chat",
-}
-
-# Intent detection patterns for /chat
-INTENT_PATTERNS = {
-    "weather": r"\b(weather|temperature|rain|forecast|cold|hot|sunny|cloudy)\b",
-    "events": r"\b(calendar|meeting|event|schedule|appointment)\b",
-    "todos": r"\b(todo|task|reminder|to-do|tasks)\b",
-    "refresh": r"\b(refresh|update|check again|refetch)\b",
 }
 
 
@@ -279,25 +272,6 @@ async def get_introduction():
     return {"intro": intro, "status": 200}
 
 
-def detect_intents(message: str) -> set[str]:
-    """Detect intents from user message using regex patterns.
-
-    Args:
-        message: The user's message.
-
-    Returns:
-        Set of detected intent names.
-    """
-    message_lower = message.lower()
-    intents = set()
-
-    for intent, pattern in INTENT_PATTERNS.items():
-        if re.search(pattern, message_lower, re.IGNORECASE):
-            intents.add(intent)
-
-    return intents
-
-
 @app.post("/chat", response_model=ChatResponse)
 async def chat_with_nova(request: ChatRequest) -> ChatResponse:
     """Handle conversational messages with Nova.
@@ -310,13 +284,13 @@ async def chat_with_nova(request: ChatRequest) -> ChatResponse:
 
     vitals.info(f"Chat: {user_message[:50]}...")
 
-    # Detect intents
-    intents = detect_intents(user_message)
-    force_refresh = "refresh" in intents
+    # Detect intents using hybrid detector
+    intents = intent_detector.detect(user_message)
+    force_refresh = Intent.REFRESH in intents
     fetched_data: dict = {}
 
     # Fetch data based on intents
-    if "weather" in intents:
+    if Intent.WEATHER in intents:
         weather_data = await cache.get(
             "weather",
             arms.get_weather,
@@ -325,7 +299,7 @@ async def chat_with_nova(request: ChatRequest) -> ChatResponse:
         if weather_data and weather_data.get("result"):
             fetched_data["weather"] = json.loads(weather_data["result"])
 
-    if "events" in intents:
+    if Intent.EVENTS in intents:
 
         async def fetch_events():
             return await arms.get_events(today)
@@ -334,7 +308,7 @@ async def chat_with_nova(request: ChatRequest) -> ChatResponse:
         if events_data and events_data.get("result"):
             fetched_data["events"] = json.loads(events_data["result"])
 
-    if "todos" in intents:
+    if Intent.TODOS in intents:
 
         async def fetch_todos():
             return await arms.get_todos(today)

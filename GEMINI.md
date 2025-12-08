@@ -115,6 +115,7 @@ make run  # or: python heart.py
 | `memory.py` | Conversation storage | `Memory`, SQLite, `add_message()`, `get_recent()` |
 | `cache.py` | Data caching | `Cache`, TTL-based, `get()`, `get_context_summary()` |
 | `context.py` | AI context management | `Context`, `build()`, always-fresh + cached data |
+| `intent.py` | Intent detection | `IntentDetector`, hybrid regex + LLM |
 | `apis/weather.py` | Weather API wrapper | `WeatherAPI`, builder pattern |
 | `apis/calendar.py` | Google Calendar API wrapper | `CalendarAPI`, service account auth |
 | `apis/todoist.py` | Todoist API wrapper | `TodoistAPI`, token auth |

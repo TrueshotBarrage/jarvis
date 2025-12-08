@@ -4,6 +4,34 @@ All notable changes to the Jarvis project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] - 2025-12-08
+
+### Added
+
+#### Hybrid Intent Detection
+- **intent.py** - New module with `IntentDetector` class
+- **Regex fast path** - Instant matching for clear queries (0ms)
+- **LLM fallback** - Uses Gemini for ambiguous queries
+- **Multi-intent support** - Detects multiple intents (e.g., weather + events)
+- **Confidence thresholds** - Configurable sensitivity
+
+#### Unified Context System
+- **context.py** - `Context` class for AI prompt management
+- **`build_system_prompt()`** - Combines Nova's identity with data context
+- **Centralized persona** - Nova's name, capabilities, and style in one place
+
+#### Persistent Cache
+- **SQLite-backed cache** - Survives server restarts
+- **Failure-tolerant fallback** - Returns stale data on API failure
+- **`cache_entries` table** - Stores key, data, fetched_at, expires_at
+
+### Changed
+- `/chat` now uses `IntentDetector` instead of simple regex
+- Cache persists to `db/jarvis.db` instead of memory-only
+- `brain.chat()` accepts `system_prompt` parameter
+
+---
+
 ## [0.4.0] - 2025-12-08
 
 ### Added
