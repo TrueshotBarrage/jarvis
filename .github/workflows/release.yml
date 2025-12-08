@@ -1,0 +1,58 @@
+# Release workflow
+# Creates a GitHub release when a tag is pushed
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Extract version from tag
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          # Extract changelog for this version
+          if grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            # Get content between version headers
+            awk '/## \['"$VERSION"'\]/{flag=1; next} /## \[/{flag=0} flag' CHANGELOG.md > release_notes.md
+          else
+            echo "Release $VERSION" > release_notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref, '-') }}
+          generate_release_notes: true

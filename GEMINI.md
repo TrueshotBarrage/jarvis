@@ -102,3 +102,28 @@ make run  # or: python heart.py
 2. **Import errors in tests**: Ensure mocking happens before import
 3. **Audio not playing**: Check for `speech.mp3` in project root
 4. **Rate limits**: Gemini free tier has request limits, wait or use paid tier
+
+### CI/CD Pipeline
+
+GitHub Actions workflows are in `.github/workflows/`:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `ci.yml` | Push/PR to main | Lint + Test (Python 3.12, 3.13, 3.14) |
+| `dependency-review.yml` | PRs | Check for vulnerable dependencies |
+| `release.yml` | Tag push (v*.*.*) | Create GitHub release |
+
+**Creating a Release:**
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+**Required Secrets:**
+- `CODECOV_TOKEN` - For coverage reporting (optional)
+
+### Python 3.14 Compatibility
+
+- Uses `playsound3` instead of `playsound` (Python 3.14 compatible)
+- Requires `audioop-lts` for `pydub` compatibility (audioop removed in Python 3.13+)
+- Mock paths in tests use `mouth.playsound3` not `mouth.playsound`
