@@ -36,6 +36,22 @@ def init_database(db_path: str = "db/jarvis.db") -> None:
         ON messages(created_at)
     """)
 
+    # Create cache_entries table for persistent API data caching
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS cache_entries (
+            key TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP NOT NULL
+        )
+    """)
+
+    # Create index for expiration queries
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_cache_expires_at
+        ON cache_entries(expires_at)
+    """)
+
     conn.commit()
     conn.close()
 

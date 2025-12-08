@@ -128,7 +128,7 @@ class Brain:
         self,
         user_message: str,
         history: list[dict[str, str]] | None = None,
-        context: str = "",
+        system_prompt: str = "",
     ) -> str:
         """Generate a response with conversation history.
 
@@ -138,30 +138,14 @@ class Brain:
             user_message: The current user message.
             history: Previous conversation messages as list of
                 {'role': 'user'|'assistant', 'content': '...'} dicts.
-            context: Additional context (e.g., cached data summary).
+            system_prompt: Complete system prompt from Context.build_system_prompt().
 
         Returns:
             The AI-generated response text.
         """
-        # Build system prompt with current time
-        from datetime import datetime
-
-        now = datetime.now()
-        current_time = now.strftime("%A, %B %d, %Y at %I:%M %p")
-
-        system_prompt = (
-            f"You are Nova, a helpful personal AI assistant. "
-            f"The current date and time is: {current_time}. "
-            f"You have access to the user's calendar, todo list, and weather data. "
-            f"Be concise, friendly, and helpful. "
-            f"When the user asks about 'next' events or tasks, use the current time to determine what is upcoming. "
-            f"When referencing data, use natural language - don't read raw JSON. "
-            f"Output plain text only - no markdown formatting."
-        )
-
-        # Add context if provided
-        if context:
-            system_prompt += f"\n\n{context}"
+        # Use provided system prompt or fallback to minimal prompt
+        if not system_prompt:
+            system_prompt = "You are Nova, a helpful AI assistant."
 
         # Build multi-turn conversation format for Gemini
         contents = []

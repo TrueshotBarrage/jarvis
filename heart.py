@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from arms import Arms
 from brain import Brain
 from cache import Cache
+from context import Context
 from memory import Memory
 from mouth import Mouth
 
@@ -44,6 +45,7 @@ arms = attach_arms()
 mouth = unmute()
 memory = Memory()
 cache = Cache()
+context_mgr = Context(cache)
 vitals.info("All systems functional. Jarvis is ready! How is your day, sir?")
 
 jarvis_actions = {
@@ -341,18 +343,21 @@ async def chat_with_nova(request: ChatRequest) -> ChatResponse:
         if todos_data and todos_data.get("result"):
             fetched_data["todos"] = json.loads(todos_data["result"])
 
-    # Build context from cache
-    context = cache.get_context_summary()
+    # Build complete system prompt (identity + data context)
+    # Start with base system prompt (no data context yet)
+    system_prompt = context_mgr.build_system_prompt(include_data_context=True)
 
-    # If we have freshly fetched data, add it to context
+    # Add freshly fetched data to system prompt
     if fetched_data:
-        context += f"\n\nFRESHLY FETCHED DATA:\n{json.dumps(fetched_data, indent=2, default=str)}"
+        system_prompt += (
+            f"\n\nFRESHLY FETCHED DATA:\n{json.dumps(fetched_data, indent=2, default=str)}"
+        )
 
     # Get conversation history
     history = memory.get_for_context(hours=4.0, max_messages=30)
 
     # Generate AI response
-    response_text = brain.chat(user_message, history=history, context=context)
+    response_text = brain.chat(user_message, history=history, system_prompt=system_prompt)
 
     # Store messages in memory
     memory.add_message("user", user_message)
