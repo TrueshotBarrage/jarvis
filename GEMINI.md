@@ -72,6 +72,8 @@ heart.py (FastAPI Server)
 
 ### Running the Project
 
+Always remember to periodically run `make fmt` with every new change.
+
 ```bash
 # Activate venv
 source venv/bin/activate
@@ -109,7 +111,7 @@ GitHub Actions workflows are in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `ci.yml` | Push/PR to main | Lint + Test (Python 3.12, 3.13, 3.14) |
+| `ci.yml` | Push/PR to main | Lint + Test (Python 3.13, 3.14) |
 | `dependency-review.yml` | PRs | Check for vulnerable dependencies |
 | `release.yml` | Tag push (v*.*.*) | Create GitHub release |
 
@@ -120,7 +122,7 @@ git push origin v0.2.0
 ```
 
 **Required Secrets:**
-- `CODECOV_TOKEN` - For coverage reporting (optional)
+- `CODECOV_TOKEN` - For coverage reporting
 
 ### Python 3.14 Compatibility
 

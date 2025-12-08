@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import Self
+
+
 class WeatherAPI:
     """
     This class is a wrapper around the Open-Meteo Weather API.
@@ -42,7 +47,7 @@ class WeatherAPI:
             "timezone": "America/New_York",
         }
 
-    def set_coordinates(self, lat: float, lon: float) -> "WeatherAPI":
+    def set_coordinates(self, lat: float, lon: float) -> Self:
         """Set the coordinates of the location you want the weather for.
 
         Args:
