@@ -124,19 +124,20 @@ class Arms:
         return await self.get(todoist_url)
 
     async def get_events(self, day: str) -> APIResponse:
-        """Fetch calendar events for a specific day from Google Calendar.
+        """Fetch calendar events from ALL shared calendars for a specific day.
 
         Args:
             day: Date string in ISO format (YYYY-MM-DD) for which to fetch events.
 
         Returns:
             APIResponse containing calendar events data as JSON.
+            Each event includes a 'calendar' field with the calendar name.
         """
         try:
             from apis.calendar import CalendarAPI, CalendarAPIError
 
             calendar_api = CalendarAPI()
-            events = calendar_api.get_events(day)
+            events = calendar_api.get_all_events(day)
             return {"result": json.dumps(events), "status": 200}
         except CalendarAPIError as e:
             self.logger.error(f"Calendar API error: {e}")

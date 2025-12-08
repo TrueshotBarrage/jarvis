@@ -137,7 +137,9 @@ async def run_daily_routine():
             "include current temperature, chance of rain, and any notable weather events "
             "for today. Include a brief description of the highs and lows of the daily "
             "weather, if it exists, as well as sunrise and sunset times. "
-            "Ensure the message is friendly and easy to understand."
+            "Ensure the message is friendly and easy to understand. "
+            "IMPORTANT: Output plain text only - no markdown, no asterisks, no bullet "
+            "points, no formatting. This will be read aloud by text-to-speech."
         )
         weather_output = brain.process(
             weather, request_type="api_data", context=weather_prompt_context
@@ -149,9 +151,11 @@ async def run_daily_routine():
         events_prompt_context = (
             "Given the calendar events data, generate a concise and engaging "
             "message suitable for a personal assistant to read aloud. Summarize "
-            "the events for today including their times and titles. If there are "
-            "many events, prioritize the most important ones. Keep it brief and "
-            "easy to understand."
+            "the events for today including their times and titles. Group events "
+            "by calendar if multiple calendars are present. If there are many events, "
+            "prioritize the most important ones. Keep it brief and easy to understand. "
+            "IMPORTANT: Output plain text only - no markdown, no asterisks, no bullet "
+            "points, no formatting. This will be read aloud by text-to-speech."
         )
         events_output = brain.process(
             events, request_type="api_data", context=events_prompt_context

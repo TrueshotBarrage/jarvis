@@ -120,21 +120,22 @@ class TestArms:
 
     @pytest.mark.asyncio
     async def test_get_events_success(self):
-        """Test get_events returns formatted calendar events."""
+        """Test get_events returns formatted calendar events from all calendars."""
         from apis.calendar import CalendarAPI
 
         arms = Arms()
         arms.start()
 
         mock_events = [
-            {"id": "1", "summary": "Meeting", "start": "10:00", "end": "11:00"},
+            {"id": "1", "summary": "Meeting", "start": "10:00", "end": "11:00", "calendar": "Work"},
         ]
 
-        with patch.object(CalendarAPI, "get_events", return_value=mock_events):
+        with patch.object(CalendarAPI, "get_all_events", return_value=mock_events):
             result = await arms.get_events("2025-01-15")
 
             assert result["status"] == 200
             assert '"Meeting"' in result["result"]
+            assert '"Work"' in result["result"]
 
         await arms.stop()
 
@@ -146,7 +147,9 @@ class TestArms:
         arms = Arms()
         arms.start()
 
-        with patch.object(CalendarAPI, "get_events", side_effect=CalendarAPIError("Test error")):
+        with patch.object(
+            CalendarAPI, "get_all_events", side_effect=CalendarAPIError("Test error")
+        ):
             result = await arms.get_events("2025-01-15")
 
             assert result["status"] == 500

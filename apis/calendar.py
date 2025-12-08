@@ -44,20 +44,36 @@ class CalendarAPI:
         self,
         credentials_path: str | None = None,
         calendar_id: str | None = None,
+        calendar_ids: list[str] | None = None,
     ) -> None:
         """Initialize the Calendar API client.
 
         Args:
             credentials_path: Path to the service account credentials JSON file.
                 Defaults to "google_credentials.json" in the project root.
-            calendar_id: The calendar ID to query. If None, will try to use
-                GOOGLE_CALENDAR_ID environment variable, or auto-detect from
-                shared calendars.
+            calendar_id: Single calendar ID to query (for backwards compatibility).
+            calendar_ids: List of calendar IDs to query. If None, will try to use
+                GOOGLE_CALENDAR_IDS env var (comma-separated).
         """
         self.logger = logging.getLogger(__name__)
         self.credentials_path = credentials_path or self.DEFAULT_CREDENTIALS_PATH
-        # Priority: explicit param > env var > auto-detect later
+
+        # Priority for single calendar: explicit param > env var
         self.calendar_id = calendar_id or os.environ.get("GOOGLE_CALENDAR_ID")
+
+        # Priority for multiple calendars: explicit param > env var
+        if calendar_ids:
+            self.calendar_ids = calendar_ids
+        else:
+            env_ids = os.environ.get("GOOGLE_CALENDAR_IDS", "")
+            if env_ids:
+                self.calendar_ids = [cid.strip() for cid in env_ids.split(",") if cid.strip()]
+            elif self.calendar_id:
+                # Fallback: use single calendar_id if no multi-calendar config
+                self.calendar_ids = [self.calendar_id]
+            else:
+                self.calendar_ids = []
+
         self._service: Any | None = None
 
     def _get_service(self) -> Any:
@@ -142,6 +158,116 @@ class CalendarAPI:
         except HttpError as e:
             raise CalendarAPIError(f"Calendar API request failed: {e}") from e
 
+    def get_all_calendars(self) -> list[dict[str, str]]:
+        """Get all calendars accessible to the service account.
+
+        Returns:
+            A list of calendar dictionaries, each containing:
+                - id: Calendar ID (email or unique ID)
+                - name: Calendar display name
+        """
+        try:
+            service = self._get_service()
+            calendar_list = service.calendarList().list().execute()
+            calendars = calendar_list.get("items", [])
+
+            result = []
+            for cal in calendars:
+                result.append(
+                    {
+                        "id": cal["id"],
+                        "name": cal.get("summary", cal["id"]),
+                    }
+                )
+
+            self.logger.info(f"Found {len(result)} accessible calendar(s)")
+            return result
+
+        except HttpError as e:
+            raise CalendarAPIError(f"Failed to list calendars: {e}") from e
+
+    def get_all_events(self, date: str) -> list[dict[str, Any]]:
+        """Fetch events from ALL configured calendars for a specific date.
+
+        Uses calendar IDs from GOOGLE_CALENDAR_IDS env var (comma-separated)
+        or falls back to GOOGLE_CALENDAR_ID.
+
+        Args:
+            date: The date to fetch events for, in ISO format (YYYY-MM-DD).
+
+        Returns:
+            A list of event dictionaries, each containing:
+                - id: Event ID
+                - summary: Event title
+                - start: Start time (ISO format or date)
+                - end: End time (ISO format or date)
+                - location: Event location (if set)
+                - description: Event description (if set)
+                - calendar: Calendar name (e.g., "Work", "Food", "Chores")
+
+        Raises:
+            CalendarAPIError: If the API request fails.
+        """
+        try:
+            service = self._get_service()
+
+            if not self.calendar_ids:
+                raise CalendarAPIError(
+                    "No calendars configured! Set GOOGLE_CALENDAR_IDS env var "
+                    "(comma-separated) or GOOGLE_CALENDAR_ID."
+                )
+
+            time_min = f"{date}T00:00:00Z"
+            time_max = f"{date}T23:59:59Z"
+
+            all_events = []
+
+            for cal_id in self.calendar_ids:
+                # Get calendar name from the API
+                try:
+                    cal_info = service.calendars().get(calendarId=cal_id).execute()
+                    cal_name = cal_info.get("summary", cal_id)
+                except HttpError:
+                    # If we can't get the name, use the ID
+                    cal_name = cal_id.split("@")[0] if "@" in cal_id else cal_id
+
+                self.logger.info(f"Fetching events from '{cal_name}' ({cal_id})")
+
+                try:
+                    events_result = (
+                        service.events()
+                        .list(
+                            calendarId=cal_id,
+                            timeMin=time_min,
+                            timeMax=time_max,
+                            singleEvents=True,
+                            orderBy="startTime",
+                        )
+                        .execute()
+                    )
+
+                    events = events_result.get("items", [])
+                    self.logger.info(f"  Found {len(events)} events in '{cal_name}'")
+
+                    for event in events:
+                        formatted = self._format_event(event, calendar_name=cal_name)
+                        all_events.append(formatted)
+
+                except HttpError as e:
+                    self.logger.warning(f"Failed to fetch from '{cal_name}': {e}")
+                    continue
+
+            # Sort all events by start time
+            all_events.sort(key=lambda e: e["start"])
+
+            self.logger.info(
+                f"Total: {len(all_events)} events across {len(self.calendar_ids)} calendars"
+            )
+            return all_events
+
+        except HttpError as e:
+            raise CalendarAPIError(f"Calendar API request failed: {e}") from e
+
     def _detect_calendar_id(self, service: Any) -> str:
         """Auto-detect the first available shared calendar.
 
@@ -179,11 +305,14 @@ class CalendarAPI:
         except HttpError as e:
             raise CalendarAPIError(f"Failed to list calendars: {e}") from e
 
-    def _format_event(self, event: dict[str, Any]) -> dict[str, Any]:
+    def _format_event(
+        self, event: dict[str, Any], calendar_name: str | None = None
+    ) -> dict[str, Any]:
         """Format a raw API event into a simplified structure.
 
         Args:
             event: Raw event data from the Calendar API.
+            calendar_name: Optional name of the calendar this event belongs to.
 
         Returns:
             Simplified event dictionary.
@@ -192,7 +321,7 @@ class CalendarAPI:
         start = event.get("start", {})
         end = event.get("end", {})
 
-        return {
+        result = {
             "id": event.get("id", ""),
             "summary": event.get("summary", "Untitled Event"),
             "start": start.get("dateTime") or start.get("date", ""),
@@ -200,6 +329,11 @@ class CalendarAPI:
             "location": event.get("location", ""),
             "description": event.get("description", ""),
         }
+
+        if calendar_name:
+            result["calendar"] = calendar_name
+
+        return result
 
     def set_calendar_id(self, calendar_id: str) -> CalendarAPI:
         """Set the calendar ID to query.
