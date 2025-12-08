@@ -20,7 +20,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from brain import Brain
+    from jarvis.brain import Brain
 
 
 class Intent(Enum):

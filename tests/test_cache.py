@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from cache import Cache, CacheEntry
+from jarvis.cache import Cache, CacheEntry
 
 
 @pytest.fixture

@@ -9,7 +9,7 @@ import logging
 
 import google.generativeai as genai
 
-from config import settings
+from jarvis.config import settings
 
 
 class Brain:

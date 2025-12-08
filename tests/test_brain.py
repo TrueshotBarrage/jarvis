@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 class TestBrain:
     """Test suite for Brain AI module."""
 
-    @patch("brain.settings")
-    @patch("brain.genai")
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
     def test_initialization_success(self, mock_genai, mock_settings):
         """Test Brain initializes successfully with valid config."""
         mock_settings.gemini_api_key = "test-api-key"
@@ -18,15 +18,15 @@ class TestBrain:
         mock_model.generate_content.return_value = mock_response
         mock_genai.GenerativeModel.return_value = mock_model
 
-        from brain import Brain
+        from jarvis.brain import Brain
 
         Brain()
 
         mock_genai.configure.assert_called_once_with(api_key="test-api-key")
         mock_genai.GenerativeModel.assert_called_once_with("gemma-3-27b-it")
 
-    @patch("brain.settings")
-    @patch("brain.genai")
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
     def test_process_api_data(self, mock_genai, mock_settings):
         """Test process() with api_data request type."""
         mock_settings.gemini_api_key = "test-api-key"
@@ -37,7 +37,7 @@ class TestBrain:
         mock_model.generate_content.return_value = mock_response
         mock_genai.GenerativeModel.return_value = mock_model
 
-        from brain import Brain
+        from jarvis.brain import Brain
 
         brain = Brain()
 
@@ -47,8 +47,8 @@ class TestBrain:
 
         assert result == "Processed response"
 
-    @patch("brain.settings")
-    @patch("brain.genai")
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
     def test_process_choose(self, mock_genai, mock_settings):
         """Test process() with choose request type."""
         mock_settings.gemini_api_key = "test-api-key"
@@ -59,7 +59,7 @@ class TestBrain:
         mock_model.generate_content.return_value = mock_response
         mock_genai.GenerativeModel.return_value = mock_model
 
-        from brain import Brain
+        from jarvis.brain import Brain
 
         brain = Brain()
 
@@ -71,8 +71,8 @@ class TestBrain:
 
         assert result == "weather"
 
-    @patch("brain.settings")
-    @patch("brain.genai")
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
     def test_process_unknown_type(self, mock_genai, mock_settings):
         """Test process() with unknown request type returns default."""
         mock_settings.gemini_api_key = "test-api-key"
@@ -83,7 +83,7 @@ class TestBrain:
         mock_model.generate_content.return_value = mock_response
         mock_genai.GenerativeModel.return_value = mock_model
 
-        from brain import Brain
+        from jarvis.brain import Brain
 
         brain = Brain()
 
@@ -91,8 +91,8 @@ class TestBrain:
 
         assert result == "Hello world!"
 
-    @patch("brain.settings")
-    @patch("brain.genai")
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
     def test_choose_returns_string(self, mock_genai, mock_settings):
         """Test choose() returns string when get_probabilities=False."""
         mock_settings.gemini_api_key = "test-api-key"
@@ -103,7 +103,7 @@ class TestBrain:
         mock_model.generate_content.return_value = mock_response
         mock_genai.GenerativeModel.return_value = mock_model
 
-        from brain import Brain
+        from jarvis.brain import Brain
 
         brain = Brain()
 
@@ -115,8 +115,8 @@ class TestBrain:
 
         assert result == "weather"
 
-    @patch("brain.settings")
-    @patch("brain.genai")
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
     def test_choose_returns_probabilities(self, mock_genai, mock_settings):
         """Test choose() returns dict when get_probabilities=True."""
         mock_settings.gemini_api_key = "test-api-key"
@@ -127,7 +127,7 @@ class TestBrain:
         mock_model.generate_content.return_value = mock_response
         mock_genai.GenerativeModel.return_value = mock_model
 
-        from brain import Brain
+        from jarvis.brain import Brain
 
         brain = Brain()
 

@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from memory import Memory
+from jarvis.memory import Memory
 
 
 @pytest.fixture

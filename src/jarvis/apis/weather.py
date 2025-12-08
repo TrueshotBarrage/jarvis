@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Self
 
-from config import settings
+from jarvis.config import settings
 
 
 class WeatherAPI:

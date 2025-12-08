@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
-from arms import Arms
+from jarvis.arms import Arms
 
 
 class TestArms:
@@ -121,7 +121,7 @@ class TestArms:
     @pytest.mark.asyncio
     async def test_get_events_success(self):
         """Test get_events returns formatted calendar events from all calendars."""
-        from apis.calendar import CalendarAPI
+        from jarvis.apis.calendar import CalendarAPI
 
         arms = Arms()
         arms.start()
@@ -142,7 +142,7 @@ class TestArms:
     @pytest.mark.asyncio
     async def test_get_events_handles_error(self):
         """Test get_events handles CalendarAPIError gracefully."""
-        from apis.calendar import CalendarAPI, CalendarAPIError
+        from jarvis.apis.calendar import CalendarAPI, CalendarAPIError
 
         arms = Arms()
         arms.start()

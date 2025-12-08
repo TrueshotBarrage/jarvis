@@ -14,10 +14,10 @@ import pytest
 def mock_components():
     """Mock all components before heart.py is imported."""
     with (
-        patch("brain.genai") as mock_genai,
-        patch("mouth.gTTS") as mock_gtts,
-        patch("mouth.playsound3") as mock_playsound,
-        patch("mouth.pydub") as mock_pydub,
+        patch("jarvis.brain.genai") as mock_genai,
+        patch("jarvis.mouth.gTTS") as mock_gtts,
+        patch("jarvis.mouth.playsound3") as mock_playsound,
+        patch("jarvis.mouth.pydub") as mock_pydub,
     ):
         # Setup Brain mock
         mock_model = MagicMock()
@@ -46,7 +46,7 @@ class TestHeartAPIUnit:
 
     def test_jarvis_actions_defined(self, mock_components):  # noqa: ARG002
         """Test that jarvis_actions mapping is defined."""
-        import heart
+        import jarvis.heart as heart
 
         assert "weather" in heart.jarvis_actions
         assert "todos" in heart.jarvis_actions
@@ -59,7 +59,7 @@ def app_client(mock_components):  # noqa: ARG001
     """Create a test client for the FastAPI app."""
     from httpx import ASGITransport, AsyncClient
 
-    import heart
+    import jarvis.heart as heart
 
     return AsyncClient(transport=ASGITransport(app=heart.app), base_url="http://test")
 
@@ -70,7 +70,7 @@ class TestHeartAPIIntegration:
     @pytest.mark.asyncio
     async def test_weather_endpoint_success(self, app_client, mock_components):  # noqa: ARG002
         """Test /weather endpoint returns weather data on success."""
-        import heart
+        import jarvis.heart as heart
 
         with patch.object(heart.arms, "get_weather", new_callable=AsyncMock) as mock_get_weather:
             mock_get_weather.return_value = {
@@ -88,7 +88,7 @@ class TestHeartAPIIntegration:
     @pytest.mark.asyncio
     async def test_weather_endpoint_api_error(self, app_client, mock_components):  # noqa: ARG002
         """Test /weather endpoint handles API errors gracefully."""
-        import heart
+        import jarvis.heart as heart
 
         with patch.object(heart.arms, "get_weather", new_callable=AsyncMock) as mock_get_weather:
             mock_get_weather.return_value = {"result": None, "status": 500}
@@ -112,7 +112,7 @@ class TestHeartAPIIntegration:
     @pytest.mark.asyncio
     async def test_events_endpoint_success(self, app_client, mock_components):  # noqa: ARG002
         """Test /events endpoint returns calendar events."""
-        import heart
+        import jarvis.heart as heart
 
         with patch.object(heart.arms, "get_events", new_callable=AsyncMock) as mock_get_events:
             mock_get_events.return_value = {
@@ -130,7 +130,7 @@ class TestHeartAPIIntegration:
     @pytest.mark.asyncio
     async def test_events_endpoint_api_error(self, app_client, mock_components):  # noqa: ARG002
         """Test /events endpoint handles API errors gracefully."""
-        import heart
+        import jarvis.heart as heart
 
         with patch.object(heart.arms, "get_events", new_callable=AsyncMock) as mock_get_events:
             mock_get_events.return_value = {"result": None, "status": 500}
@@ -143,7 +143,7 @@ class TestHeartAPIIntegration:
     @pytest.mark.asyncio
     async def test_daily_includes_events(self, app_client, mock_components):  # noqa: ARG002
         """Test /daily endpoint fetches weather, events, and todos."""
-        import heart
+        import jarvis.heart as heart
 
         with (
             patch.object(heart.arms, "get_weather", new_callable=AsyncMock) as mock_weather,
@@ -177,7 +177,7 @@ class TestHeartAPIIntegration:
     @pytest.mark.asyncio
     async def test_todos_endpoint_success(self, app_client, mock_components):  # noqa: ARG002
         """Test /todos endpoint returns tasks."""
-        import heart
+        import jarvis.heart as heart
 
         with patch.object(heart.arms, "get_todos", new_callable=AsyncMock) as mock_get_todos:
             mock_get_todos.return_value = {
@@ -196,7 +196,7 @@ class TestHeartAPIIntegration:
     @pytest.mark.asyncio
     async def test_todos_endpoint_api_error(self, app_client, mock_components):  # noqa: ARG002
         """Test /todos endpoint handles API errors gracefully."""
-        import heart
+        import jarvis.heart as heart
 
         with patch.object(heart.arms, "get_todos", new_callable=AsyncMock) as mock_get_todos:
             mock_get_todos.return_value = {"result": None, "status": 500}

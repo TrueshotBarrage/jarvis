@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from mouth import DEFAULT_AUDIO_FILE, Mouth
+from jarvis.mouth import DEFAULT_AUDIO_FILE, Mouth
 
 
 class TestMouth:
@@ -18,9 +18,9 @@ class TestMouth:
         mouth = Mouth(audio_file="/tmp/custom.mp3")
         assert mouth.audio_file == "/tmp/custom.mp3"
 
-    @patch("mouth.playsound3.playsound")
-    @patch("mouth.pydub.AudioSegment")
-    @patch("mouth.gTTS")
+    @patch("jarvis.mouth.playsound3.playsound")
+    @patch("jarvis.mouth.pydub.AudioSegment")
+    @patch("jarvis.mouth.gTTS")
     def test_speak_creates_audio_file(self, mock_gtts, mock_audio, _mock_playsound):
         """Test speak() creates and plays audio file."""
         # Setup mocks
@@ -38,7 +38,7 @@ class TestMouth:
         mock_gtts.assert_called_once_with("Hello world", slow=False)
         mock_tts_instance.save.assert_called_once_with("/tmp/test.mp3")
 
-    @patch("mouth.pydub.AudioSegment")
+    @patch("jarvis.mouth.pydub.AudioSegment")
     def test_speed_up_modifies_audio(self, mock_audio):
         """Test _speed_up modifies playback speed."""
         mock_sound = MagicMock()
@@ -52,9 +52,9 @@ class TestMouth:
         mock_sound.speedup.assert_called_once_with(playback_speed=1.5)
         mock_faster.export.assert_called_once_with("/tmp/test.mp3", format="mp3")
 
-    @patch("mouth.playsound3.playsound")
-    @patch("mouth.pydub.AudioSegment")
-    @patch("mouth.gTTS")
+    @patch("jarvis.mouth.playsound3.playsound")
+    @patch("jarvis.mouth.pydub.AudioSegment")
+    @patch("jarvis.mouth.gTTS")
     def test_speak_custom_playback_speed(self, mock_gtts, mock_audio, _mock_playsound):
         """Test speak() respects custom playback speed."""
         mock_tts_instance = MagicMock()

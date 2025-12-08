@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from cache import Cache
+from jarvis.cache import Cache
 
 
 @dataclass

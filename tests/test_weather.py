@@ -2,13 +2,13 @@
 
 from unittest.mock import patch
 
-from apis.weather import WeatherAPI
+from jarvis.apis.weather import WeatherAPI
 
 
 class TestWeatherAPI:
     """Test suite for WeatherAPI class."""
 
-    @patch("apis.weather.settings")
+    @patch("jarvis.apis.weather.settings")
     def test_default_initialization(self, mock_settings):
         """Test that WeatherAPI initializes with default values."""
         mock_settings.weather_lat = 40.789

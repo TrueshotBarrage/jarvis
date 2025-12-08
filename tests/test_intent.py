@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from intent import (
+from jarvis.intent import (
     Intent,
     IntentDetector,
     detect_intents_simple,
@@ -188,7 +188,7 @@ class TestIntentCache:
 
     def test_stores_and_retrieves_exact_match(self):
         """Test cache stores and retrieves exact matches."""
-        from intent import IntentCache
+        from jarvis.intent import IntentCache
 
         cache = IntentCache()
         cache.store("What's the weather?", {Intent.WEATHER: 0.9})
@@ -200,7 +200,7 @@ class TestIntentCache:
 
     def test_retrieves_similar_query(self):
         """Test cache returns similar queries."""
-        from intent import IntentCache
+        from jarvis.intent import IntentCache
 
         cache = IntentCache(similarity_threshold=0.8)
         cache.store("What's the weather today?", {Intent.WEATHER: 0.9})
@@ -213,7 +213,7 @@ class TestIntentCache:
 
     def test_returns_none_for_dissimilar_query(self):
         """Test cache returns None for dissimilar queries."""
-        from intent import IntentCache
+        from jarvis.intent import IntentCache
 
         cache = IntentCache()
         cache.store("What's the weather?", {Intent.WEATHER: 0.9})
@@ -224,7 +224,7 @@ class TestIntentCache:
 
     def test_clear_removes_all_entries(self):
         """Test clear removes all cached entries."""
-        from intent import IntentCache
+        from jarvis.intent import IntentCache
 
         cache = IntentCache()
         cache.store("query1", {Intent.WEATHER: 0.9})

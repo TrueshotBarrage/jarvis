@@ -10,7 +10,7 @@ from typing import Any, TypedDict
 
 import httpx
 
-from apis.weather import WeatherAPI
+from jarvis.apis.weather import WeatherAPI
 
 
 class APIResponse(TypedDict):
@@ -117,7 +117,7 @@ class Arms:
             APIResponse containing todos data as JSON.
         """
         try:
-            from apis.todoist import TodoistAPI, TodoistAPIError
+            from jarvis.apis.todoist import TodoistAPI, TodoistAPIError
 
             todoist_api = TodoistAPI()
             tasks = todoist_api.get_tasks(day)
@@ -137,7 +137,7 @@ class Arms:
             Each event includes a 'calendar' field with the calendar name.
         """
         try:
-            from apis.calendar import CalendarAPI, CalendarAPIError
+            from jarvis.apis.calendar import CalendarAPI, CalendarAPIError
 
             calendar_api = CalendarAPI()
             events = calendar_api.get_all_events(day)

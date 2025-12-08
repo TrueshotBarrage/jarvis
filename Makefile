@@ -32,7 +32,7 @@ test-cov:
 
 # Run the server with auto-reload (loads .env if present)
 run:
-	@if [ -f .env ]; then export $$(grep -v '^#' .env | xargs) && $(PYTHON) -m uvicorn heart:app --reload; else $(PYTHON) -m uvicorn heart:app --reload; fi
+	@if [ -f .env ]; then export $$(grep -v '^#' .env | xargs) && PYTHONPATH=src $(PYTHON) -m uvicorn jarvis.heart:app --reload; else PYTHONPATH=src $(PYTHON) -m uvicorn jarvis.heart:app --reload; fi
 
 # Clean up generated files
 clean:

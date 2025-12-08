@@ -1,6 +1,6 @@
 [project]
 name = "jarvis"
-version = "0.2.0"
+version = "0.6.0"
 description = "AI-powered personal assistant"
 requires-python = ">=3.13"
 dependencies = [
@@ -52,10 +52,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["brain", "arms", "mouth", "apis"]
+known-first-party = ["jarvis"]
 
 [tool.coverage.run]
-source = ["."]
+source = ["src/jarvis"]
 omit = ["tests/*", "venv/*", "__pycache__/*"]
 
 [tool.coverage.report]

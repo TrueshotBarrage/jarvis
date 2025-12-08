@@ -4,13 +4,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from apis.calendar import CalendarAPI, CalendarAPIError
+from jarvis.apis.calendar import CalendarAPI, CalendarAPIError
 
 
 class TestCalendarAPIInit:
     """Test suite for CalendarAPI initialization."""
 
-    @patch("apis.calendar.settings")
+    @patch("jarvis.apis.calendar.settings")
     def test_default_initialization(self, mock_settings):
         """Test CalendarAPI initializes with default values."""
         mock_settings.google_credentials_path = "google_credentials.json"
@@ -49,8 +49,8 @@ class TestCalendarAPIGetService:
             api._get_service()
         assert "Credentials file not found" in str(exc_info.value)
 
-    @patch("apis.calendar.build")
-    @patch("apis.calendar.service_account.Credentials.from_service_account_file")
+    @patch("jarvis.apis.calendar.build")
+    @patch("jarvis.apis.calendar.service_account.Credentials.from_service_account_file")
     @patch("pathlib.Path.exists")
     def test_creates_service_successfully(self, mock_exists, mock_creds, mock_build):
         """Test successful service creation with valid credentials."""
@@ -66,8 +66,8 @@ class TestCalendarAPIGetService:
         mock_creds.assert_called_once()
         mock_build.assert_called_once_with("calendar", "v3", credentials=mock_creds.return_value)
 
-    @patch("apis.calendar.build")
-    @patch("apis.calendar.service_account.Credentials.from_service_account_file")
+    @patch("jarvis.apis.calendar.build")
+    @patch("jarvis.apis.calendar.service_account.Credentials.from_service_account_file")
     @patch("pathlib.Path.exists")
     def test_caches_service(self, mock_exists, mock_creds, mock_build):
         """Test that service is cached after first initialization."""

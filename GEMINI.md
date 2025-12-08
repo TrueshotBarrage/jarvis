@@ -24,7 +24,8 @@
 ## Architecture
 
 ```
-heart.py (FastAPI Server)
+src/jarvis/
+    ├── heart.py (FastAPI Server)
     ├── brain.py (Gemini AI)
     ├── arms.py (HTTP Client)
     ├── mouth.py (TTS Output)

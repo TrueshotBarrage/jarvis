@@ -11,7 +11,7 @@ from typing import Any
 
 import requests
 
-from config import settings
+from jarvis.config import settings
 
 
 class TodoistAPIError(Exception):

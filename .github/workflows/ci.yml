@@ -70,9 +70,10 @@ jobs:
       - name: Run tests with coverage
         env:
           GEMINI_API_KEY: test-key-for-ci
+          PYTHONPATH: src
         run: |
           python -m pytest tests/ \
-            --cov=. \
+            --cov=src/jarvis \
             --cov-report=xml \
             --cov-report=term-missing \
             -v

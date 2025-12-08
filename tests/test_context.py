@@ -6,8 +6,8 @@ from datetime import datetime
 
 import pytest
 
-from cache import Cache
-from context import Context, ContextProvider
+from jarvis.cache import Cache
+from jarvis.context import Context, ContextProvider
 
 
 @pytest.fixture

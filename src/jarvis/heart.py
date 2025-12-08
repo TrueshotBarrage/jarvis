@@ -12,13 +12,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from arms import Arms
-from brain import Brain
-from cache import Cache
-from context import Context
-from intent import Intent, IntentDetector
-from memory import Memory
-from mouth import Mouth
+from jarvis.arms import Arms
+from jarvis.brain import Brain
+from jarvis.cache import Cache
+from jarvis.context import Context
+from jarvis.intent import Intent, IntentDetector
+from jarvis.memory import Memory
+from jarvis.mouth import Mouth
 
 
 def become_intelligent():

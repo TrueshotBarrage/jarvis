@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from apis.todoist import TodoistAPI, TodoistAPIError
+from jarvis.apis.todoist import TodoistAPI, TodoistAPIError
 
 
 class TestTodoistAPIInit:
@@ -12,7 +12,7 @@ class TestTodoistAPIInit:
 
     def test_default_initialization(self):
         """Test TodoistAPI initializes with default values."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test-token"
             api = TodoistAPI()
             assert api._token is None  # Token loaded lazily
@@ -23,7 +23,7 @@ class TestTodoistAPIGetToken:
 
     def test_raises_error_when_token_not_configured(self):
         """Test that missing token raises TodoistAPIError."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = None
             api = TodoistAPI()
             with pytest.raises(TodoistAPIError) as exc_info:
@@ -32,7 +32,7 @@ class TestTodoistAPIGetToken:
 
     def test_loads_token_successfully(self):
         """Test successful token loading from config."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test_token"
             api = TodoistAPI()
             token = api._get_token()
@@ -40,7 +40,7 @@ class TestTodoistAPIGetToken:
 
     def test_caches_token(self):
         """Test that token is cached after first load."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test_token"
             api = TodoistAPI()
             token1 = api._get_token()
@@ -51,10 +51,10 @@ class TestTodoistAPIGetToken:
 class TestTodoistAPIGetTasks:
     """Test suite for TodoistAPI.get_tasks method."""
 
-    @patch("apis.todoist.requests.get")
+    @patch("jarvis.apis.todoist.requests.get")
     def test_get_tasks_returns_formatted_tasks(self, mock_get):
         """Test get_tasks returns properly formatted tasks."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test_token"
 
             mock_response = MagicMock()
@@ -84,10 +84,10 @@ class TestTodoistAPIGetTasks:
             assert tasks[0]["content"] == "Buy groceries"
             assert tasks[0]["priority"] == 4
 
-    @patch("apis.todoist.requests.get")
+    @patch("jarvis.apis.todoist.requests.get")
     def test_get_tasks_with_date_filter(self, mock_get):
         """Test get_tasks passes date filter to API."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test_token"
 
             mock_response = MagicMock()
@@ -101,10 +101,10 @@ class TestTodoistAPIGetTasks:
             _, kwargs = mock_get.call_args
             assert kwargs["params"]["filter"] == "due: 2025-01-01"
 
-    @patch("apis.todoist.requests.get")
+    @patch("jarvis.apis.todoist.requests.get")
     def test_get_tasks_without_date(self, mock_get):
         """Test get_tasks works without date filter."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test_token"
 
             mock_response = MagicMock()
@@ -118,10 +118,10 @@ class TestTodoistAPIGetTasks:
             _, kwargs = mock_get.call_args
             assert "filter" not in kwargs.get("params", {})
 
-    @patch("apis.todoist.requests.get")
+    @patch("jarvis.apis.todoist.requests.get")
     def test_get_tasks_handles_no_due_date(self, mock_get):
         """Test get_tasks handles tasks without due dates."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test_token"
 
             mock_response = MagicMock()
@@ -150,7 +150,7 @@ class TestTodoistAPIFormatTask:
 
     def test_format_task_with_due_date(self):
         """Test _format_task formats task with due date."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test_token"
 
             api = TodoistAPI()
@@ -178,7 +178,7 @@ class TestTodoistAPIFormatTask:
 
     def test_format_task_without_due_date(self):
         """Test _format_task handles task without due date."""
-        with patch("apis.todoist.settings") as mock_settings:
+        with patch("jarvis.apis.todoist.settings") as mock_settings:
             mock_settings.todoist_api_token = "test_token"
 
             api = TodoistAPI()
