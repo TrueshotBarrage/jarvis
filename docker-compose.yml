@@ -1,0 +1,24 @@
+services:
+  jarvis:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount secrets (required)
+      - ./secrets.json:/app/secrets.json:ro
+      # Mount Google credentials (optional, for calendar)
+      - ./google_credentials.json:/app/google_credentials.json:ro
+      # Persist database
+      - jarvis-db:/app/db
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/test')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  jarvis-db:

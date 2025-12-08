@@ -96,14 +96,6 @@ async def test_external_api():
     return res
 
 
-# @app.post("/user_input")
-# async def process_user_input(user_input: str):
-#     res = brain.choose(user_input, list(jarvis_actions.keys()), get_probabilities=True)
-#     # The expected response is a dict of actions to probabilities, so let's call the correct action
-#     res[]
-#     return {"result": response, "status": 200}
-
-
 @app.get("/weather")
 async def get_weather():
     """Get current weather forecast from Open-Meteo API."""

@@ -41,13 +41,31 @@ heart.py (FastAPI Server)
 - Use `@pytest.fixture(scope="module")` to mock `brain.genai`, `mouth.gTTS`, etc. before importing heart
 - The `mock_components` fixture in `tests/test_heart.py` demonstrates the pattern
 
-### API Keys & Secrets
+### Configuration
 
-- Gemini API key is stored in `secrets.json` (gitignored)
-- Todoist API token is also stored in `secrets.json`
-- Format: `{"gemini_api_key": "your-key", "todoist_api_token": "your-token"}`
-- Brain reads from secrets.json on initialization
-- Get Todoist token from: Settings → Integrations → Developer
+Configuration uses **Pydantic Settings** with environment variable and `.env` file support:
+
+1. **Setup**: Copy `.env.example` to `.env` and fill in your API keys
+2. **Priority**: Environment variables > `.env` file > defaults
+3. **Config module**: All settings are accessed via `from config import settings`
+
+```bash
+# Required
+GEMINI_API_KEY=your-gemini-key
+
+# Optional
+TODOIST_API_TOKEN=your-todoist-token
+GOOGLE_CALENDAR_ID=your.email@gmail.com
+WEATHER_LAT=40.789
+WEATHER_LON=-73.967
+```
+
+**For tests**: Mock `config.settings` instead of creating test files:
+```python
+@patch("brain.settings")
+def test_example(self, mock_settings):
+    mock_settings.gemini_api_key = "test-key"
+```
 
 ### Common Tasks
 
@@ -116,13 +134,14 @@ make run  # or: python heart.py
 | `cache.py` | Data caching | `Cache`, TTL-based, `get()`, `get_context_summary()` |
 | `context.py` | AI context management | `Context`, `build()`, always-fresh + cached data |
 | `intent.py` | Intent detection | `IntentDetector`, hybrid regex + LLM |
+| `config.py` | Centralized settings | `Settings`, Pydantic Settings, `.env` support |
 | `apis/weather.py` | Weather API wrapper | `WeatherAPI`, builder pattern |
 | `apis/calendar.py` | Google Calendar API wrapper | `CalendarAPI`, service account auth |
 | `apis/todoist.py` | Todoist API wrapper | `TodoistAPI`, token auth |
 
 ### Debugging Tips
 
-1. **Gemini connection issues**: Check `secrets.json` and API quota
+1. **Gemini connection issues**: Check `.env` has valid `GEMINI_API_KEY` and API quota
 2. **Import errors in tests**: Ensure mocking happens before import
 3. **Audio not playing**: Check for `speech.mp3` in project root
 4. **Rate limits**: Gemini free tier has request limits, wait or use paid tier

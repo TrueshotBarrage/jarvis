@@ -17,6 +17,8 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from config import settings
+
 
 class CalendarAPIError(Exception):
     """Exception raised for Calendar API errors."""
@@ -38,7 +40,6 @@ class CalendarAPI:
     """
 
     SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
-    DEFAULT_CREDENTIALS_PATH = "google_credentials.json"
 
     def __init__(
         self,
@@ -50,16 +51,18 @@ class CalendarAPI:
 
         Args:
             credentials_path: Path to the service account credentials JSON file.
-                Defaults to "google_credentials.json" in the project root.
+                Defaults to config setting or "google_credentials.json".
             calendar_id: Single calendar ID to query (for backwards compatibility).
             calendar_ids: List of calendar IDs to query. If None, will try to use
                 GOOGLE_CALENDAR_IDS env var (comma-separated).
         """
         self.logger = logging.getLogger(__name__)
-        self.credentials_path = credentials_path or self.DEFAULT_CREDENTIALS_PATH
+        self.credentials_path = credentials_path or settings.google_credentials_path
 
-        # Priority for single calendar: explicit param > env var
-        self.calendar_id = calendar_id or os.environ.get("GOOGLE_CALENDAR_ID")
+        # Priority for single calendar: explicit param > config > env var
+        self.calendar_id = (
+            calendar_id or settings.google_calendar_id or os.environ.get("GOOGLE_CALENDAR_ID")
+        )
 
         # Priority for multiple calendars: explicit param > env var
         if calendar_ids:

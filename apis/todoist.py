@@ -6,12 +6,12 @@ using direct HTTP requests for fetching tasks.
 
 from __future__ import annotations
 
-import json
 import logging
-from pathlib import Path
 from typing import Any
 
 import requests
+
+from config import settings
 
 
 class TodoistAPIError(Exception):
@@ -30,53 +30,31 @@ class TodoistAPI:
         logger: Module logger instance.
     """
 
-    DEFAULT_SECRETS_PATH = "secrets.json"
     BASE_URL = "https://api.todoist.com/rest/v2"
 
-    def __init__(self, secrets_path: str | None = None) -> None:
-        """Initialize the Todoist API client.
-
-        Args:
-            secrets_path: Path to the secrets JSON file containing the API token.
-                Defaults to "secrets.json" in the project root.
-        """
+    def __init__(self) -> None:
+        """Initialize the Todoist API client."""
         self.logger = logging.getLogger(__name__)
-        self.secrets_path = secrets_path or self.DEFAULT_SECRETS_PATH
         self._token: str | None = None
 
     def _get_token(self) -> str:
-        """Get the API token from secrets file.
+        """Get the API token from config.
 
         Returns:
             The Todoist API token.
 
         Raises:
-            TodoistAPIError: If secrets file is missing or token not found.
+            TodoistAPIError: If token not configured.
         """
         if self._token is not None:
             return self._token
 
-        secrets_file = Path(self.secrets_path)
-        if not secrets_file.exists():
+        if not settings.todoist_api_token:
             raise TodoistAPIError(
-                f"Secrets file not found: {self.secrets_path}. "
-                "Please create secrets.json with your todoist_api_token."
+                "TODOIST_API_TOKEN not configured. Set it in .env or as an environment variable."
             )
 
-        try:
-            with open(secrets_file) as f:
-                secrets = json.load(f)
-        except json.JSONDecodeError as e:
-            raise TodoistAPIError(f"Invalid JSON in secrets file: {e}") from e
-
-        token = secrets.get("todoist_api_token")
-        if not token:
-            raise TodoistAPIError(
-                "todoist_api_token not found in secrets.json. "
-                "Get your token from Todoist Settings → Integrations → Developer."
-            )
-
-        self._token = token
+        self._token = settings.todoist_api_token
         self.logger.info("Todoist API token loaded")
         return self._token
 

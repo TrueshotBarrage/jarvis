@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Self
 
+from config import settings
+
 
 class WeatherAPI:
     """
@@ -33,8 +35,8 @@ class WeatherAPI:
     def __init__(self):
         self.base_url = "https://api.open-meteo.com/v1/forecast"
         self.params = {
-            "latitude": 40.784208,
-            "longitude": -73.980252,
+            "latitude": settings.weather_lat,
+            "longitude": settings.weather_lon,
             "current": ["temperature_2m", "precipitation"],
             "daily": [
                 "temperature_2m_max",

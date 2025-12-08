@@ -7,8 +7,9 @@ intent classification, and content generation.
 import json
 import logging
 
-import google.api_core.exceptions
 import google.generativeai as genai
+
+from config import settings
 
 
 class Brain:
@@ -19,46 +20,14 @@ class Brain:
         ai: Gemini generative model instance.
     """
 
-    def __init__(self, secrets_file: str = "secrets.json") -> None:
-        """Initialize the Brain with Gemini AI connection.
-
-        Args:
-            secrets_file: Path to JSON file containing API keys.
-        """
+    def __init__(self) -> None:
+        """Initialize the Brain with Gemini AI connection."""
         self.logger = logging.getLogger(__name__)
 
-        # Load API key from secrets file
-        self.logger.info("Reading secrets from config...")
-        with open(secrets_file) as f:
-            secrets = json.load(f)
-        gemini_api_key = secrets["gemini_api_key"]
-        self.logger.info("Secrets fully initialized.")
-
-        # Initialize Gemini AI
+        # Initialize Gemini AI with config
         self.logger.info("Establishing handshake protocol with Gemini...")
-        genai.configure(api_key=gemini_api_key)
+        genai.configure(api_key=settings.gemini_api_key)
         self.ai = genai.GenerativeModel("gemma-3-27b-it")
-
-        self._verify_connection()
-
-    def _verify_connection(self) -> None:
-        """Test the Gemini API connection with a timeout."""
-        try:
-            conn_test_res = self.ai.generate_content("Test!", request_options={"timeout": 10})
-            conn_success = conn_test_res.text.strip()
-            self.logger.info(f"Gemini: {conn_success}")
-            self.logger.info("Contact established with Gemini servers.")
-            self.logger.info("Intelligence cortex fully activated and ready to go!")
-        except google.api_core.exceptions.DeadlineExceeded as e:
-            self.logger.warning(f"Gemini timeout error: {e}")
-            self.logger.warning(
-                "Error establishing handshake with Gemini servers. "
-                "Check your connection to the multiverse grid?"
-            )
-            self.logger.info(
-                "Intelligence cortex activated, but cannot reach multiverse grid network. "
-                "Complex thought processing may not be available."
-            )
 
     def process(self, message: str, request_type: str, context: str | None = None) -> str:
         """Process a message using the AI model.

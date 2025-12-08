@@ -73,13 +73,11 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure API keys (required)
-cat > secrets.json << EOF
-{
-  "gemini_api_key": "YOUR_GEMINI_API_KEY",
-  "todoist_api_token": "YOUR_TODOIST_TOKEN"
-}
-EOF
+# 4. Configure environment (required)
+cp .env.example .env
+# Edit .env with your API keys:
+# GEMINI_API_KEY=your-gemini-key
+# TODOIST_API_TOKEN=your-todoist-token (optional)
 
 # 5. Start the server
 make run
@@ -115,12 +113,32 @@ To enable calendar events in daily briefings:
    make run
    ```
 
+### Docker (Alternative)
+
+Run Jarvis in a container:
+
+```bash
+# Build and start
+make docker-build
+make docker-up
+
+# View logs
+make docker-logs
+
+# Stop
+make docker-down
+```
+
+> **Note:** Ensure `secrets.json` exists before running. The database is persisted in a Docker volume.
+
 ## Usage
 
 ### Start the Server
 
 ```bash
 python heart.py
+# or
+make run
 ```
 
 The server will start at `http://127.0.0.1:8000`.

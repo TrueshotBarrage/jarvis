@@ -4,6 +4,37 @@ All notable changes to the Jarvis project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] - 2025-12-08
+
+### Added
+
+#### Environment-Based Configuration
+- **config.py** - Centralized settings using Pydantic Settings
+- **`.env` support** - Load configuration from environment files
+- **`.env.example`** - Template with all available options
+- **Type-safe settings** - Validated API keys and coordinates
+
+#### Docker Support
+- **Dockerfile** - Python 3.13-slim with ffmpeg for audio
+- **docker-compose.yml** - Volume mounts for secrets and database
+- **`.dockerignore`** - Excludes secrets, venv, and db files
+- **Makefile targets** - `docker-build`, `docker-up`, `docker-down`, `docker-logs`
+
+#### LLM Classification Improvements
+- **Few-shot examples** - 8 curated examples for better accuracy
+- **Query caching** - `IntentCache` avoids repeat LLM calls
+- **Usage logging** - Detailed logs for pattern analysis
+
+### Changed
+- All modules now use `from config import settings` instead of reading `secrets.json`
+- `Brain`, `TodoistAPI`, `CalendarAPI`, `WeatherAPI` no longer accept `secrets_file` parameter
+- Tests mock `config.settings` instead of creating temp files
+
+### Removed
+- `secrets.json` support removed (migrate to `.env`)
+
+---
+
 ## [0.5.0] - 2025-12-08
 
 ### Added

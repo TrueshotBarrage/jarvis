@@ -1,18 +1,24 @@
 """Tests for the Weather API wrapper."""
 
+from unittest.mock import patch
+
 from apis.weather import WeatherAPI
 
 
 class TestWeatherAPI:
     """Test suite for WeatherAPI class."""
 
-    def test_default_initialization(self):
+    @patch("apis.weather.settings")
+    def test_default_initialization(self, mock_settings):
         """Test that WeatherAPI initializes with default values."""
+        mock_settings.weather_lat = 40.789
+        mock_settings.weather_lon = -73.967
+
         api = WeatherAPI()
 
         assert api.base_url == "https://api.open-meteo.com/v1/forecast"
-        assert api.params["latitude"] == 40.784208
-        assert api.params["longitude"] == -73.980252
+        assert api.params["latitude"] == 40.789
+        assert api.params["longitude"] == -73.967
         assert api.params["temperature_unit"] == "fahrenheit"
         assert api.params["timezone"] == "America/New_York"
 

@@ -6,10 +6,12 @@ from unittest.mock import MagicMock, patch
 class TestBrain:
     """Test suite for Brain AI module."""
 
+    @patch("brain.settings")
     @patch("brain.genai")
-    def test_initialization_success(self, mock_genai, mock_secrets):
-        """Test Brain initializes successfully with valid secrets."""
-        # Setup mock
+    def test_initialization_success(self, mock_genai, mock_settings):
+        """Test Brain initializes successfully with valid config."""
+        mock_settings.gemini_api_key = "test-api-key"
+
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "Hello!"
@@ -18,15 +20,17 @@ class TestBrain:
 
         from brain import Brain
 
-        Brain(secrets_file=mock_secrets)
+        Brain()
 
-        # Verify Gemini was configured
         mock_genai.configure.assert_called_once_with(api_key="test-api-key")
         mock_genai.GenerativeModel.assert_called_once_with("gemma-3-27b-it")
 
+    @patch("brain.settings")
     @patch("brain.genai")
-    def test_process_api_data(self, mock_genai, mock_secrets):
+    def test_process_api_data(self, mock_genai, mock_settings):
         """Test process() with api_data request type."""
+        mock_settings.gemini_api_key = "test-api-key"
+
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "Processed response"
@@ -35,7 +39,7 @@ class TestBrain:
 
         from brain import Brain
 
-        brain = Brain(secrets_file=mock_secrets)
+        brain = Brain()
 
         result = brain.process(
             message='{"temp": 72}', request_type="api_data", context="Describe the weather"
@@ -43,9 +47,12 @@ class TestBrain:
 
         assert result == "Processed response"
 
+    @patch("brain.settings")
     @patch("brain.genai")
-    def test_process_choose(self, mock_genai, mock_secrets):
+    def test_process_choose(self, mock_genai, mock_settings):
         """Test process() with choose request type."""
+        mock_settings.gemini_api_key = "test-api-key"
+
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "weather"
@@ -54,7 +61,7 @@ class TestBrain:
 
         from brain import Brain
 
-        brain = Brain(secrets_file=mock_secrets)
+        brain = Brain()
 
         result = brain.process(
             message="What's the temperature?",
@@ -64,9 +71,12 @@ class TestBrain:
 
         assert result == "weather"
 
+    @patch("brain.settings")
     @patch("brain.genai")
-    def test_process_unknown_type(self, mock_genai, mock_secrets):
+    def test_process_unknown_type(self, mock_genai, mock_settings):
         """Test process() with unknown request type returns default."""
+        mock_settings.gemini_api_key = "test-api-key"
+
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "Hello!"
@@ -75,15 +85,18 @@ class TestBrain:
 
         from brain import Brain
 
-        brain = Brain(secrets_file=mock_secrets)
+        brain = Brain()
 
         result = brain.process(message="test", request_type="unknown_type", context=None)
 
         assert result == "Hello world!"
 
+    @patch("brain.settings")
     @patch("brain.genai")
-    def test_choose_returns_string(self, mock_genai, mock_secrets):
+    def test_choose_returns_string(self, mock_genai, mock_settings):
         """Test choose() returns string when get_probabilities=False."""
+        mock_settings.gemini_api_key = "test-api-key"
+
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_response.text = "weather"
@@ -92,7 +105,7 @@ class TestBrain:
 
         from brain import Brain
 
-        brain = Brain(secrets_file=mock_secrets)
+        brain = Brain()
 
         result = brain.choose(
             user_input="What's the weather?",
@@ -102,9 +115,12 @@ class TestBrain:
 
         assert result == "weather"
 
+    @patch("brain.settings")
     @patch("brain.genai")
-    def test_choose_returns_probabilities(self, mock_genai, mock_secrets):
+    def test_choose_returns_probabilities(self, mock_genai, mock_settings):
         """Test choose() returns dict when get_probabilities=True."""
+        mock_settings.gemini_api_key = "test-api-key"
+
         mock_model = MagicMock()
         mock_response = MagicMock()
         mock_response.text = '{"weather": 0.8, "calendar": 0.2}'
@@ -113,7 +129,7 @@ class TestBrain:
 
         from brain import Brain
 
-        brain = Brain(secrets_file=mock_secrets)
+        brain = Brain()
 
         result = brain.choose(
             user_input="What's the weather?",

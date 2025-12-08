@@ -15,3 +15,6 @@ audioop-lts  # Required for pydub on Python 3.13+
 # Google Calendar
 google-api-python-client==2.154.0
 google-auth==2.36.0
+
+# Configuration
+pydantic-settings>=2.0.0

@@ -24,12 +24,32 @@ This roadmap outlines planned features and improvements based on existing TODOs,
 - [x] Add calendar events to `/daily` routine
 - [x] Create `/events` endpoint
 
+### Conversation Memory System
+**Status:** ✅ Complete (v0.4.0)  
+**Effort:** Medium
+
+- [x] SQLite-based conversation storage (`memory.py`)
+- [x] TTL-based data cache (`cache.py`)
+- [x] Persistent cache with failure fallback
+- [x] `/chat` endpoint for multi-turn conversations
+- [x] Context window management
+
+### Hybrid Intent Detection
+**Status:** ✅ Complete (v0.5.0)  
+**Effort:** Medium
+
+- [x] Regex fast-path for clear queries
+- [x] LLM classification with few-shot examples
+- [x] Query similarity caching
+- [x] Multi-intent support
+- [x] Usage logging for pattern analysis
+
 ---
 
 ## 🎯 Priority 2: Voice Interface
 
 ### Wake Word Detection (iOS App)
-**Status:** Planned in README  
+**Status:** Planned  
 **Effort:** High
 
 Architecture:
@@ -60,12 +80,12 @@ Architecture:
 ## 🎯 Priority 3: Advanced Features
 
 ### User Intent Routing
-**Status:** Commented out in `heart.py`  
+**Status:** ✅ Complete  
 **Effort:** Medium
 
-- [ ] Finish `/user_input` endpoint
-- [ ] Implement action routing based on AI classification
-- [ ] Add probability-based action selection
+- [x] Implement action routing based on AI classification
+- [x] Add probability-based action selection
+- [x] Hybrid regex + LLM detection
 
 ### Autobudget Pipeline
 **Status:** Stub in `arms.py`  
@@ -86,10 +106,10 @@ Architecture:
 - [x] Improve error handling
 
 ### Infrastructure
-- [x] Add unit tests (65 tests)
+- [x] Add unit tests (139 tests)
 - [x] Add integration tests
 - [x] CI/CD pipeline
-- [ ] Docker containerization
+- [x] Docker containerization
 - [ ] Environment-based configuration
 
 ### Documentation
@@ -104,6 +124,6 @@ Architecture:
 
 | Phase | Focus | Target |
 |-------|-------|--------|
-| 1 | Todoist + Calendar | Q1 2025 |
+| 1 | Core Features | ✅ Complete |
 | 2 | Voice Interface | Q2 2025 |
 | 3 | Advanced Features | Q3 2025 |

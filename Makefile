@@ -1,4 +1,4 @@
-.PHONY: install dev lint format test test-cov run clean
+.PHONY: install dev lint format test test-cov run clean docker-build docker-up docker-down docker-logs
 
 # Python virtual environment
 VENV := venv
@@ -39,3 +39,16 @@ clean:
 	rm -rf __pycache__ .pytest_cache .ruff_cache htmlcov .coverage
 	rm -rf tests/__pycache__ apis/__pycache__
 	rm -f speech.mp3
+
+# Docker commands
+docker-build:
+	docker compose build
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
+
+docker-logs:
+	docker compose logs -f jarvis

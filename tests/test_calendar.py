@@ -10,11 +10,15 @@ from apis.calendar import CalendarAPI, CalendarAPIError
 class TestCalendarAPIInit:
     """Test suite for CalendarAPI initialization."""
 
-    def test_default_initialization(self):
+    @patch("apis.calendar.settings")
+    def test_default_initialization(self, mock_settings):
         """Test CalendarAPI initializes with default values."""
+        mock_settings.google_credentials_path = "google_credentials.json"
+        mock_settings.google_calendar_id = None
+
         api = CalendarAPI()
         assert api.credentials_path == "google_credentials.json"
-        assert api.calendar_id is None  # Now auto-detects or uses env var
+        assert api.calendar_id is None
         assert api._service is None
 
     def test_custom_credentials_path(self):
