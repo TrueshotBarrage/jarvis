@@ -21,6 +21,11 @@
 
 **Jarvis** is a modular, AI-powered personal assistant built with Python and FastAPI. It provides voice-enabled daily briefings including weather, todos, and calendar events.
 
+## Theme
+
+**Jarvis** is inspired by the movie **Iron Man** and the personal AI agent **JARVIS** for Tony Stark. As such, whenever 
+possible, the code should thematically align with the same themes found in the movie and the character.
+
 ## Architecture
 
 ```
@@ -30,9 +35,11 @@ src/jarvis/
     ├── arms.py (HTTP Client)
     ├── mouth.py (TTS Output)
     ├── memory.py (SQLite Conversations)
-    ├── cache.py (TTL Data Cache)
+    ├── cache.py (TTL Data Cache + Sliding Window)
     ├── context.py (AI Context)
     ├── intent.py (Intent Detection)
+    ├── time_stone.py (Time Range Parsing)
+    ├── semantic_transcoder.py (API Response Parsing)
     ├── config.py (Settings)
     └── apis/
         ├── weather.py (Open-Meteo)
@@ -49,6 +56,9 @@ src/jarvis/
 5. **Conversation memory**: SQLite-based storage with time-based retrieval (last 4 hours)
 6. **Data caching**: TTL-based caching (weather 30min, events/todos 5min)
 7. **Hybrid intent detection**: Regex fast-path with LLM fallback for ambiguous queries
+8. **Temporal parsing**: Regex-based date range extraction (today, tomorrow, this week, next N days)
+9. **Sliding window cache**: Forward-looking 7-day window for efficient calendar queries
+10. **Semantic transcoding**: API responses parsed into human-readable summaries for LLM
 
 ## Important Context for AI Agents
 
@@ -145,15 +155,17 @@ make run  # or: python heart.py
 |------|---------|----------------------|
 | `heart.py` | FastAPI server, main entry | `app`, `lifespan()`, `/chat`, route handlers |
 | `brain.py` | AI processing | `Brain`, `process()`, `choose()`, `chat()` |
-| `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()`, `get_events()`, `get_todos()` |
+| `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()`, `get_events()`, `get_events_range()`, `get_todos()` |
 | `mouth.py` | Text-to-speech | `Mouth`, `speak()` |
 | `memory.py` | Conversation storage | `Memory`, SQLite, `add_message()`, `get_recent()` |
-| `cache.py` | Data caching | `Cache`, TTL-based, `get()`, `get_context_summary()` |
+| `cache.py` | Data caching | `Cache`, TTL-based, `get()`, `get_events_cached()`, `get_context_summary()` |
 | `context.py` | AI context management | `Context`, `build()`, always-fresh + cached data |
 | `intent.py` | Intent detection | `IntentDetector`, hybrid regex + LLM |
+| `time_stone.py` | Time range parsing | `TimeRange`, `TemporalParser`, `parse_time_range()` |
+| `semantic_transcoder.py` | API response parsing | `SemanticTranscoder`, `transcode_all()`, date/time formatting |
 | `config.py` | Centralized settings | `Settings`, Pydantic Settings, `.env` support |
 | `apis/weather.py` | Weather API wrapper | `WeatherAPI`, builder pattern |
-| `apis/calendar.py` | Google Calendar API wrapper | `CalendarAPI`, service account auth |
+| `apis/calendar.py` | Google Calendar API wrapper | `CalendarAPI`, `get_events_range()`, service account auth |
 | `apis/todoist.py` | Todoist API wrapper | `TodoistAPI`, token auth |
 
 ### Debugging Tips

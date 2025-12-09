@@ -312,3 +312,125 @@ class Cache:
                 "ttl_remaining": max(0, (entry.expires_at - datetime.now()).total_seconds()),
             }
         return status
+
+    # =========================================================================
+    # Sliding Window Cache for Events
+    # =========================================================================
+
+    EVENTS_WINDOW_DAYS = 7  # Forward-looking cache window
+
+    async def get_events_cached(
+        self,
+        start_date: date,  # noqa: F821
+        end_date: date,  # noqa: F821
+        fetcher: Callable[..., Awaitable[Any]],
+        force_refresh: bool = False,
+    ) -> list[dict[str, Any]]:
+        """Get events with smart sliding window caching.
+
+        For queries within the 7-day forward window, serves from a single cached
+        window. For queries outside the window (historical or far-future), fetches
+        directly without caching.
+
+        Args:
+            start_date: Start date of the query range.
+            end_date: End date of the query range.
+            fetcher: Async function to fetch events for a date range.
+                     Should accept (start_date: str, end_date: str) args.
+            force_refresh: If True, bypasses cache and fetches fresh data.
+
+        Returns:
+            List of event dictionaries matching the date range.
+        """
+        from datetime import date as date_type
+
+        today = date_type.today()
+        window_end = today + timedelta(days=self.EVENTS_WINDOW_DAYS - 1)
+
+        # Check if query fits within the forward window
+        if start_date >= today and end_date <= window_end:
+            # Serve from window cache
+            self.logger.debug(
+                f"Events query {start_date} to {end_date} fits in window, using cache"
+            )
+            window_data = await self._get_or_refresh_events_window(fetcher, force_refresh)
+            return self._filter_events_by_date_range(window_data, start_date, end_date)
+
+        # Query is outside window - fetch directly without caching
+        self.logger.info(
+            f"Events query {start_date} to {end_date} outside window, fetching directly"
+        )
+        try:
+            response = await fetcher(start_date.isoformat(), end_date.isoformat())
+            if response and response.get("result"):
+                import json as json_module
+
+                return json_module.loads(response["result"])
+            return []
+        except Exception as e:
+            self.logger.error(f"Failed to fetch events: {e}")
+            return []
+
+    async def _get_or_refresh_events_window(
+        self,
+        fetcher: Callable[..., Awaitable[Any]],
+        force_refresh: bool = False,
+    ) -> list[dict[str, Any]]:
+        """Get or refresh the forward-looking events window cache.
+
+        Args:
+            fetcher: Async function to fetch events for a date range.
+            force_refresh: If True, forces a refresh of the window.
+
+        Returns:
+            List of all events in the 7-day window.
+        """
+        from datetime import date as date_type
+
+        cache_key = "events:window"
+
+        async def fetch_window() -> dict[str, Any]:
+            today = date_type.today()
+            end = today + timedelta(days=self.EVENTS_WINDOW_DAYS - 1)
+            return await fetcher(today.isoformat(), end.isoformat())
+
+        result = await self.get(cache_key, fetch_window, force_refresh)
+
+        if result and result.get("result"):
+            import json as json_module
+
+            return json_module.loads(result["result"])
+        return []
+
+    def _filter_events_by_date_range(
+        self,
+        events: list[dict[str, Any]],
+        start_date: date,  # noqa: F821
+        end_date: date,  # noqa: F821
+    ) -> list[dict[str, Any]]:
+        """Filter events to only include those within the date range.
+
+        Args:
+            events: List of event dictionaries with 'date' or 'start' fields.
+            start_date: Start date of the range (inclusive).
+            end_date: End date of the range (inclusive).
+
+        Returns:
+            Filtered list of events.
+        """
+        filtered = []
+        start_str = start_date.isoformat()
+        end_str = end_date.isoformat()
+
+        for event in events:
+            # Get the event date from 'date' field or extract from 'start'
+            event_date = event.get("date")
+            if not event_date:
+                start_field = event.get("start", "")
+                event_date = start_field.split("T")[0] if "T" in start_field else start_field
+
+            # Check if event falls within range
+            if event_date and start_str <= event_date <= end_str:
+                filtered.append(event)
+
+        return filtered

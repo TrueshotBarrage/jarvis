@@ -137,7 +137,7 @@ make docker-logs
 make docker-down
 ```
 
-> **Note:** Ensure `secrets.json` exists before running. The database is persisted in a Docker volume.
+> **Note:** Ensure `.env` is configured before running. The database is persisted in a Docker volume.
 
 ## Usage
 
@@ -222,13 +222,18 @@ For ambiguous queries like *"Do I need an umbrella for my meeting?"*, Nova uses 
 
 ## Configuration
 
-### secrets.json
+### Environment Variables
 
-```json
-{
-  "gemini_api_key": "your-google-gemini-api-key",
-  "todoist_api_token": "your-todoist-api-token"
-}
+All configuration is done via `.env` file (copy from `.env.example`):
+
+```bash
+# Required
+GEMINI_API_KEY=your-google-gemini-api-key
+
+# Optional
+TODOIST_API_TOKEN=your-todoist-api-token
+GOOGLE_CALENDAR_ID=your.email@gmail.com
+GOOGLE_CALENDAR_IDS=cal1@gmail.com,cal2@gmail.com
 ```
 
 Get your Todoist API token from: **Todoist Settings → Integrations → Developer**

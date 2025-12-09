@@ -292,13 +292,29 @@ async def chat_with_nova(request: ChatRequest) -> ChatResponse:
             fetched_data["weather"] = json.loads(weather_data["result"])
 
     if Intent.EVENTS in intents:
+        # Parse time range from message (e.g., "tomorrow", "this week", "next 3 days")
+        from jarvis.time_stone import TimeRange, parse_time_range
 
-        async def fetch_events():
-            return await arms.get_events(today)
+        time_range = parse_time_range(user_message)
+        if time_range is None:
+            # Default to today if no temporal expression found
+            time_range = TimeRange.today()
 
-        events_data = await cache.get("events", fetch_events, force_refresh=force_refresh)
-        if events_data and events_data.get("result"):
-            fetched_data["events"] = json.loads(events_data["result"])
+        vitals.info(
+            f"Events query for: {time_range.description} ({time_range.start} to {time_range.end})"
+        )
+
+        # Use sliding window cache for efficient retrieval
+        events = await cache.get_events_cached(
+            time_range.start,
+            time_range.end,
+            arms.get_events_range,
+            force_refresh=force_refresh,
+        )
+
+        if events:
+            fetched_data["events"] = events
+            fetched_data["events_range"] = time_range.description
 
     if Intent.TODOS in intents:
 
@@ -313,11 +329,23 @@ async def chat_with_nova(request: ChatRequest) -> ChatResponse:
     # Start with base system prompt (no data context yet)
     system_prompt = context_mgr.build_system_prompt(include_data_context=True)
 
-    # Add freshly fetched data to system prompt
+    # Add freshly fetched data to system prompt using semantic transcoder
+    # This transforms raw API data into human-readable summaries that the LLM
+    # can easily understand without date reasoning or JSON parsing
     if fetched_data:
-        system_prompt += (
-            f"\n\nFRESHLY FETCHED DATA:\n{json.dumps(fetched_data, indent=2, default=str)}"
-        )
+        from jarvis.semantic_transcoder import get_transcoder
+
+        transcoder = get_transcoder()
+
+        # Get time_range if available for event context
+        events_time_range = None
+        if "events" in fetched_data:
+            from jarvis.time_stone import TimeRange, parse_time_range
+
+            events_time_range = parse_time_range(user_message) or TimeRange.today()
+
+        transcoded_data = transcoder.transcode_all(fetched_data, events_time_range)
+        system_prompt += f"\n\nCURRENT DATA:\n{transcoded_data}"
 
     # Get conversation history
     history = memory.get_for_context(hours=4.0, max_messages=30)

@@ -272,6 +272,118 @@ class CalendarAPI:
         except HttpError as e:
             raise CalendarAPIError(f"Calendar API request failed: {e}") from e
 
+    def get_events_range(
+        self, start_date: str, end_date: str, max_days: int = 30
+    ) -> list[dict[str, Any]]:
+        """Fetch events from ALL configured calendars for a date range.
+
+        Args:
+            start_date: Start date in ISO format (YYYY-MM-DD), inclusive.
+            end_date: End date in ISO format (YYYY-MM-DD), inclusive.
+            max_days: Maximum number of days to fetch (default 30, for safety).
+
+        Returns:
+            A list of event dictionaries, each containing:
+                - id: Event ID
+                - summary: Event title
+                - start: Start time (ISO format or date)
+                - end: End time (ISO format or date)
+                - location: Event location (if set)
+                - description: Event description (if set)
+                - calendar: Calendar name
+                - calendar_type: Calendar classification
+                - date: Date string (YYYY-MM-DD) for grouping
+
+        Raises:
+            CalendarAPIError: If the API request fails.
+            ValueError: If date range exceeds max_days.
+        """
+        from datetime import datetime
+
+        # Parse and validate dates
+        try:
+            start = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError as e:
+            raise CalendarAPIError(f"Invalid date format: {e}") from e
+
+        # Check range limit
+        days = (end - start).days + 1
+        if days > max_days:
+            raise ValueError(f"Date range {days} days exceeds maximum of {max_days}")
+
+        if days < 1:
+            raise ValueError("End date must be on or after start date")
+
+        try:
+            service = self._get_service()
+
+            if not self.calendar_ids:
+                raise CalendarAPIError(
+                    "No calendars configured! Set GOOGLE_CALENDAR_IDS env var "
+                    "(comma-separated) or GOOGLE_CALENDAR_ID."
+                )
+
+            # Use end of day for the end date to include full day
+            time_min = f"{start_date}T00:00:00Z"
+            time_max = f"{end_date}T23:59:59Z"
+
+            all_events = []
+
+            for cal_id in self.calendar_ids:
+                # Get calendar name from the API
+                try:
+                    cal_info = service.calendars().get(calendarId=cal_id).execute()
+                    cal_name = cal_info.get("summary", cal_id)
+                except HttpError:
+                    cal_name = cal_id.split("@")[0] if "@" in cal_id else cal_id
+
+                self.logger.info(
+                    f"Fetching events from '{cal_name}' for {start_date} to {end_date}"
+                )
+
+                try:
+                    events_result = (
+                        service.events()
+                        .list(
+                            calendarId=cal_id,
+                            timeMin=time_min,
+                            timeMax=time_max,
+                            singleEvents=True,
+                            orderBy="startTime",
+                        )
+                        .execute()
+                    )
+
+                    events = events_result.get("items", [])
+                    self.logger.info(f"  Found {len(events)} events in '{cal_name}'")
+
+                    for event in events:
+                        formatted = self._format_event(event, calendar_name=cal_name)
+                        # Add date field for grouping
+                        event_start = formatted["start"]
+                        if "T" in event_start:
+                            formatted["date"] = event_start.split("T")[0]
+                        else:
+                            formatted["date"] = event_start
+                        all_events.append(formatted)
+
+                except HttpError as e:
+                    self.logger.warning(f"Failed to fetch from '{cal_name}': {e}")
+                    continue
+
+            # Sort all events by start time
+            all_events.sort(key=lambda e: e["start"])
+
+            self.logger.info(
+                f"Total: {len(all_events)} events across {len(self.calendar_ids)} calendars "
+                f"for {start_date} to {end_date}"
+            )
+            return all_events
+
+        except HttpError as e:
+            raise CalendarAPIError(f"Calendar API request failed: {e}") from e
+
     def _detect_calendar_id(self, service: Any) -> str:
         """Auto-detect the first available shared calendar.
 

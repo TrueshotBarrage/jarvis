@@ -146,6 +146,30 @@ class Arms:
             self.logger.error(f"Calendar API error: {e}")
             return {"result": None, "status": 500}
 
+    async def get_events_range(self, start_date: str, end_date: str) -> APIResponse:
+        """Fetch calendar events from ALL shared calendars for a date range.
+
+        Args:
+            start_date: Start date in ISO format (YYYY-MM-DD), inclusive.
+            end_date: End date in ISO format (YYYY-MM-DD), inclusive.
+
+        Returns:
+            APIResponse containing calendar events data as JSON.
+            Each event includes 'calendar', 'calendar_type', and 'date' fields.
+        """
+        try:
+            from jarvis.apis.calendar import CalendarAPI, CalendarAPIError
+
+            calendar_api = CalendarAPI()
+            events = calendar_api.get_events_range(start_date, end_date)
+            return {"result": json.dumps(events), "status": 200}
+        except CalendarAPIError as e:
+            self.logger.error(f"Calendar API error: {e}")
+            return {"result": None, "status": 500}
+        except ValueError as e:
+            self.logger.error(f"Invalid date range: {e}")
+            return {"result": None, "status": 400}
+
     async def run_autobudget_pipeline(self) -> APIResponse:
         """Trigger the autobudget pipeline on external server.
 

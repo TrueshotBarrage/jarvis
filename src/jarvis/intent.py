@@ -66,6 +66,15 @@ User: "What's the weather like?"
 User: "Do I have any meetings tomorrow?"
 → {"weather": 0.0, "events": 0.95, "todos": 0.0, "refresh": 0.0}
 
+User: "What events are upcoming this week?"
+→ {"weather": 0.0, "events": 0.95, "todos": 0.0, "refresh": 0.0}
+
+User: "Any meetings next Monday?"
+→ {"weather": 0.0, "events": 0.95, "todos": 0.0, "refresh": 0.0}
+
+User: "What's on my calendar for the next 3 days?"
+→ {"weather": 0.0, "events": 0.95, "todos": 0.0, "refresh": 0.0}
+
 User: "Do I need an umbrella for my meeting?"
 → {"weather": 0.8, "events": 0.6, "todos": 0.0, "refresh": 0.0}
 
