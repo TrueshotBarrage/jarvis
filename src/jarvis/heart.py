@@ -264,6 +264,36 @@ async def get_introduction():
     return {"intro": intro, "status": 200}
 
 
+@app.get("/sheets/{spreadsheet_id}")
+async def get_sheet_data(
+    spreadsheet_id: str,
+    range: str = "Sheet1",
+    format: str = "raw",
+):
+    """Read data from a Google Sheet.
+
+    Args:
+        spreadsheet_id: The sheet ID from the URL (e.g., "1swMou...").
+        range: A1 notation range (e.g., "Sheet1!A1:D10").
+        format: "raw" for 2D array, "dict" for list of dicts.
+
+    Returns:
+        Sheet data in requested format.
+    """
+    as_dict = format.lower() == "dict"
+
+    sheet_res = await arms.get_sheet_data(spreadsheet_id, range, as_dict=as_dict)
+
+    if sheet_res["status"] != 200:
+        vitals.error(f"Error fetching sheet: {sheet_res['status']}")
+        return {"error": "Failed to fetch sheet data", "status": sheet_res["status"]}
+
+    data = json.loads(sheet_res["result"]) if sheet_res["result"] else []
+    vitals.info(f"Sheet data retrieved: {len(data)} rows")
+
+    return {"data": data, "spreadsheet_id": spreadsheet_id, "range": range, "status": 200}
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat_with_nova(request: ChatRequest) -> ChatResponse:
     """Handle conversational messages with Nova.

@@ -170,6 +170,32 @@ class Arms:
             self.logger.error(f"Invalid date range: {e}")
             return {"result": None, "status": 400}
 
+    async def get_sheet_data(
+        self,
+        spreadsheet_id: str,
+        range: str = "Sheet1",
+        as_dict: bool = False,
+    ) -> APIResponse:
+        """Fetch data from a Google Sheet.
+
+        Args:
+            spreadsheet_id: The spreadsheet ID from the URL.
+            range: A1 notation range (e.g., "Sheet1!A1:B10").
+            as_dict: If True, return list of dicts using first row as headers.
+
+        Returns:
+            APIResponse containing sheet data as JSON.
+        """
+        try:
+            from jarvis.apis.sheets import SheetsAPI, SheetsAPIError
+
+            sheets_api = SheetsAPI()
+            values = sheets_api.get_values(spreadsheet_id, range, as_dict=as_dict)
+            return {"result": json.dumps(values), "status": 200}
+        except SheetsAPIError as e:
+            self.logger.error(f"Sheets API error: {e}")
+            return {"result": None, "status": 500}
+
     async def run_autobudget_pipeline(self) -> APIResponse:
         """Trigger the autobudget pipeline on external server.
 

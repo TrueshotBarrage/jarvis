@@ -44,7 +44,8 @@ src/jarvis/
     └── apis/
         ├── weather.py (Open-Meteo)
         ├── calendar.py (Google Calendar)
-        └── todoist.py (Todoist)
+        ├── todoist.py (Todoist)
+        └── sheets.py (Google Sheets)
 ```
 
 ### Key Design Decisions
@@ -112,6 +113,7 @@ def test_example(self, mock_settings):
 ### Current Limitations & TODOs
 
 - **Google Calendar**: ✅ Complete - uses service account auth
+- **Google Sheets**: ✅ Complete - uses service account auth (read-only)
 - **Todoist**: ✅ Complete - uses API token auth
 - **Conversation Memory**: ✅ Complete - SQLite with time-based retrieval
 - **Data Cache**: ✅ Complete - TTL-based with force refresh
@@ -155,7 +157,7 @@ make run  # or: python heart.py
 |------|---------|----------------------|
 | `heart.py` | FastAPI server, main entry | `app`, `lifespan()`, `/chat`, route handlers |
 | `brain.py` | AI processing | `Brain`, `process()`, `choose()`, `chat()` |
-| `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()`, `get_events()`, `get_events_range()`, `get_todos()` |
+| `arms.py` | HTTP client | `Arms`, `get()`, `get_weather()`, `get_events()`, `get_events_range()`, `get_todos()`, `get_sheet_data()` |
 | `mouth.py` | Text-to-speech | `Mouth`, `speak()` |
 | `memory.py` | Conversation storage | `Memory`, SQLite, `add_message()`, `get_recent()` |
 | `cache.py` | Data caching | `Cache`, TTL-based, `get()`, `get_events_cached()`, `get_context_summary()` |
@@ -167,6 +169,7 @@ make run  # or: python heart.py
 | `apis/weather.py` | Weather API wrapper | `WeatherAPI`, builder pattern |
 | `apis/calendar.py` | Google Calendar API wrapper | `CalendarAPI`, `get_events_range()`, service account auth |
 | `apis/todoist.py` | Todoist API wrapper | `TodoistAPI`, token auth |
+| `apis/sheets.py` | Google Sheets API wrapper | `SheetsAPI`, `get_values()`, service account auth |
 
 ### Debugging Tips
 

@@ -36,16 +36,16 @@ This roadmap outlines planned features and improvements based on existing TODOs,
 ## 🎯 Priority 2: Personal Data Integration
 
 ### Google Sheets Integration
-**Status:** Planned  
+**Status:** Phase 1 Complete ✅  
 **Effort:** Medium
 
 Read-only access to personal spreadsheets, with write as a future phase.
 
-#### Phase 1: Read Access
-- [ ] Google Sheets API setup (service account)
-- [ ] `apis/sheets.py` wrapper class
-- [ ] Generic cell/range reading
-- [ ] `/sheets/{sheet_id}` endpoint
+#### Phase 1: Read Access ✅
+- [x] Google Sheets API setup (service account)
+- [x] `apis/sheets.py` wrapper class
+- [x] Generic cell/range reading
+- [x] `/sheets/{sheet_id}` endpoint
 
 #### Phase 2: Spreadsheet Types
 - [ ] **Budget sheet** - Read spending categories, totals
