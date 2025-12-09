@@ -17,6 +17,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from jarvis.calendar_classifier import classify_calendar
 from jarvis.config import settings
 
 
@@ -64,18 +65,18 @@ class CalendarAPI:
             calendar_id or settings.google_calendar_id or os.environ.get("GOOGLE_CALENDAR_ID")
         )
 
-        # Priority for multiple calendars: explicit param > env var
+        # Priority for multiple calendars: explicit param > settings > single calendar fallback
         if calendar_ids:
             self.calendar_ids = calendar_ids
+        elif settings.google_calendar_ids:
+            self.calendar_ids = [
+                cid.strip() for cid in settings.google_calendar_ids.split(",") if cid.strip()
+            ]
+        elif self.calendar_id:
+            # Fallback: use single calendar_id if no multi-calendar config
+            self.calendar_ids = [self.calendar_id]
         else:
-            env_ids = os.environ.get("GOOGLE_CALENDAR_IDS", "")
-            if env_ids:
-                self.calendar_ids = [cid.strip() for cid in env_ids.split(",") if cid.strip()]
-            elif self.calendar_id:
-                # Fallback: use single calendar_id if no multi-calendar config
-                self.calendar_ids = [self.calendar_id]
-            else:
-                self.calendar_ids = []
+            self.calendar_ids = []
 
         self._service: Any | None = None
 
@@ -335,6 +336,7 @@ class CalendarAPI:
 
         if calendar_name:
             result["calendar"] = calendar_name
+            result["calendar_type"] = classify_calendar(calendar_name).value
 
         return result
 

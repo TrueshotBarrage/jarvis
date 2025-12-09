@@ -30,9 +30,9 @@ test:
 test-cov:
 	$(PYTHON) -m pytest --cov=. --cov-report=term-missing --cov-report=html
 
-# Run the server with auto-reload (loads .env if present)
+# Run the server with auto-reload (.env loaded by pydantic-settings automatically)
 run:
-	@if [ -f .env ]; then export $$(grep -v '^#' .env | xargs) && PYTHONPATH=src $(PYTHON) -m uvicorn jarvis.heart:app --reload; else PYTHONPATH=src $(PYTHON) -m uvicorn jarvis.heart:app --reload; fi
+	PYTHONPATH=src $(PYTHON) -m uvicorn jarvis.heart:app --reload
 
 # Clean up generated files
 clean:

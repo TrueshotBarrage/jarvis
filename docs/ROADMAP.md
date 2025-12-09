@@ -65,11 +65,11 @@ Read-only access to personal spreadsheets, with write as a future phase.
 
 Intelligent handling of different calendar types with specialized workflows.
 
-#### Calendar Type Detection
+#### Calendar Type Detection ✅
 Intent-based classification of calendars (similar to message intent detection):
-- [ ] `calendar_classifier.py` - Detect calendar purpose from name/events
-- [ ] Categories: `birthdays`, `social`, `work`, `personal`, `recurring`
-- [ ] Config-based overrides for known calendars
+- [x] `calendar_classifier.py` - Detect calendar purpose from name/events
+- [x] Categories: `birthdays`, `social`, `work`, `personal`, `recurring`
+- [x] Config-based overrides for known calendars (`CALENDAR_TYPE_OVERRIDES`)
 
 #### Birthday Calendar Workflows
 - [ ] Configurable reminder window (1 day, 1 week, etc.)
@@ -167,7 +167,7 @@ Central repository of people metadata, linked to calendars and spreadsheets.
 - [x] Error handling
 
 ### Infrastructure ✅
-- [x] 137 unit tests
+- [x] 148 unit tests
 - [x] CI/CD pipeline
 - [x] Docker containerization
 - [x] Environment-based configuration

@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     # Google Calendar
     google_calendar_id: str | None = None
+    google_calendar_ids: str | None = None  # Comma-separated list of calendar IDs
     google_credentials_path: str = "google_credentials.json"
 
     # Weather location (default: Central Park, NYC)
@@ -48,6 +49,11 @@ class Settings(BaseSettings):
 
     # Database
     db_path: str = "db/jarvis.db"
+
+    # Calendar type overrides (JSON string)
+    # Format: '{"Calendar Name": "type", ...}'
+    # Valid types: birthdays, social, work, personal, recurring
+    calendar_type_overrides: str | None = None
 
 
 # Singleton instance
