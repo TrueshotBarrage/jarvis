@@ -31,6 +31,7 @@ class TemporalPattern(Enum):
     TOMORROW = "tomorrow"
     YESTERDAY = "yesterday"
     THIS_WEEK = "this week"
+    REST_OF_WEEK = "rest of the week"
     NEXT_WEEK = "next week"
     NEXT_N_DAYS = "next N days"
     SPECIFIC_WEEKDAY = "specific weekday"
@@ -120,6 +121,9 @@ TEMPORAL_PATTERNS: dict[TemporalPattern, re.Pattern] = {
     TemporalPattern.TOMORROW: re.compile(r"\btomorrow\b", re.IGNORECASE),
     TemporalPattern.YESTERDAY: re.compile(r"\byesterday\b", re.IGNORECASE),
     TemporalPattern.THIS_WEEK: re.compile(r"\bthis\s+week\b", re.IGNORECASE),
+    TemporalPattern.REST_OF_WEEK: re.compile(
+        r"\b(?:rest|remainder|remaining)\s+(?:of\s+)?(?:the\s+)?week\b", re.IGNORECASE
+    ),
     TemporalPattern.NEXT_WEEK: re.compile(r"\bnext\s+week\b", re.IGNORECASE),
     TemporalPattern.NEXT_N_DAYS: re.compile(r"\bnext\s+(\d+)\s+days?\b", re.IGNORECASE),
 }
@@ -235,6 +239,16 @@ class TemporalParser:
                 end=sunday,
                 description="this week",
                 pattern=TemporalPattern.THIS_WEEK,
+            )
+
+        if TEMPORAL_PATTERNS[TemporalPattern.REST_OF_WEEK].search(message):
+            # Today through Sunday (rest of current week)
+            sunday = ref + timedelta(days=6 - ref.weekday())
+            return TimeRange(
+                start=ref,
+                end=sunday,
+                description="rest of the week",
+                pattern=TemporalPattern.REST_OF_WEEK,
             )
 
         if TEMPORAL_PATTERNS[TemporalPattern.TODAY].search(message):

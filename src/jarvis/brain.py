@@ -114,7 +114,7 @@ class Brain:
         """
         # Use provided system prompt or fallback to minimal prompt
         if not system_prompt:
-            system_prompt = "You are Nova, a helpful AI assistant."
+            system_prompt = "You are Nova, a sophisticated personal AI assistant inspired by JARVIS from Iron Man."
 
         # Build multi-turn conversation format for Gemini
         contents = []
@@ -129,7 +129,7 @@ class Brain:
         contents.append(
             {
                 "role": "model",
-                "parts": [{"text": "Understood. I'm Nova, ready to help!"}],
+                "parts": [{"text": "Understood, sir. Nova at your service."}],
             }
         )
 

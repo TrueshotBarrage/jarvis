@@ -168,6 +168,39 @@ class TestContextBuildSystemPrompt:
         assert "CONTEXT:" not in result
         assert "CURRENT TIME:" not in result
 
+    def test_includes_jarvis_persona(self, temp_db):
+        """Test build_system_prompt includes JARVIS-inspired persona."""
+        cache = Cache(db_path=temp_db)
+        ctx = Context(cache)
+
+        result = ctx.build_system_prompt()
+
+        assert "JARVIS" in result
+        assert "Iron Man" in result
+        assert "sophisticated" in result
+
+    def test_includes_interpretation_rules(self, temp_db):
+        """Test build_system_prompt includes contextual interpretation rules."""
+        cache = Cache(db_path=temp_db)
+        ctx = Context(cache)
+
+        result = ctx.build_system_prompt()
+
+        assert "CONTEXTUAL INTERPRETATION RULES" in result
+        assert "Food calendar" in result
+        assert "breakfast" in result
+        assert "dinner" in result
+
+    def test_includes_few_shot_examples(self, temp_db):
+        """Test build_system_prompt includes few-shot examples."""
+        cache = Cache(db_path=temp_db)
+        ctx = Context(cache)
+
+        result = ctx.build_system_prompt()
+
+        assert "FEW-SHOT EXAMPLES" in result
+        assert "Good response:" in result
+
 
 class TestContextBuildWithCachedData:
     """Test suite for Context.build with cached data."""

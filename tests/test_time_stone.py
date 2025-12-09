@@ -150,6 +150,29 @@ class TestTemporalParser:
         assert result.end == expected_sunday
         assert result.pattern == TemporalPattern.NEXT_WEEK
 
+    def test_parse_rest_of_week(self, parser, reference_date):
+        """Test parsing 'rest of the week'."""
+        result = parser.parse("Any events remaining in the rest of the week?", reference_date)
+        assert result is not None
+        # reference_date is Wednesday Dec 11, Sunday is Dec 15
+        expected_sunday = reference_date + timedelta(days=4)  # Dec 15
+        assert result.start == reference_date
+        assert result.end == expected_sunday
+        assert result.pattern == TemporalPattern.REST_OF_WEEK
+
+    def test_parse_remainder_of_week(self, parser, reference_date):
+        """Test parsing 'remainder of the week'."""
+        result = parser.parse("Events for the remainder of the week", reference_date)
+        assert result is not None
+        assert result.start == reference_date
+        assert result.pattern == TemporalPattern.REST_OF_WEEK
+
+    def test_parse_remaining_week(self, parser, reference_date):
+        """Test parsing 'remaining week' variation."""
+        result = parser.parse("What's on my remaining week?", reference_date)
+        assert result is not None
+        assert result.pattern == TemporalPattern.REST_OF_WEEK
+
     def test_parse_next_n_days(self, parser, reference_date):
         """Test parsing 'next N days'."""
         result = parser.parse("What's happening the next 3 days?", reference_date)
