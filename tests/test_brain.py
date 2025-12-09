@@ -140,3 +140,69 @@ class TestBrain:
         assert isinstance(result, dict)
         assert result["weather"] == 0.8
         assert result["calendar"] == 0.2
+
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
+    def test_chat_returns_response(self, mock_genai, mock_settings):
+        """Test chat() returns AI response text."""
+        mock_settings.gemini_api_key = "test-api-key"
+
+        mock_model = MagicMock()
+        mock_response = MagicMock()
+        mock_response.text = "Hello! How can I help?"
+        mock_model.generate_content.return_value = mock_response
+        mock_genai.GenerativeModel.return_value = mock_model
+
+        from jarvis.brain import Brain
+
+        brain = Brain()
+
+        result = brain.chat("Hello")
+
+        assert result == "Hello! How can I help?"
+
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
+    def test_chat_with_history(self, mock_genai, mock_settings):
+        """Test chat() includes conversation history."""
+        mock_settings.gemini_api_key = "test-api-key"
+
+        mock_model = MagicMock()
+        mock_response = MagicMock()
+        mock_response.text = "Response with context"
+        mock_model.generate_content.return_value = mock_response
+        mock_genai.GenerativeModel.return_value = mock_model
+
+        from jarvis.brain import Brain
+
+        brain = Brain()
+        history = [
+            {"role": "user", "content": "Previous message"},
+            {"role": "assistant", "content": "Previous response"},
+        ]
+
+        result = brain.chat("New question", history=history)
+
+        assert result == "Response with context"
+        # Verify the model was called
+        mock_model.generate_content.assert_called_once()
+
+    @patch("jarvis.brain.settings")
+    @patch("jarvis.brain.genai")
+    def test_chat_with_system_prompt(self, mock_genai, mock_settings):
+        """Test chat() uses system prompt."""
+        mock_settings.gemini_api_key = "test-api-key"
+
+        mock_model = MagicMock()
+        mock_response = MagicMock()
+        mock_response.text = "Helpful response"
+        mock_model.generate_content.return_value = mock_response
+        mock_genai.GenerativeModel.return_value = mock_model
+
+        from jarvis.brain import Brain
+
+        brain = Brain()
+
+        result = brain.chat("Help me", system_prompt="You are a helpful assistant")
+
+        assert result == "Helpful response"

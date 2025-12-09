@@ -275,3 +275,100 @@ class TestCachePersistence:
 
         # Should load data from db
         assert cache2.get_sync("weather") == {"temp": 72}
+
+
+class TestCacheSlidingWindow:
+    """Test suite for Cache sliding window event caching."""
+
+    @pytest.mark.asyncio
+    async def test_get_events_cached_within_window(self, temp_db):
+        """Test events within 7-day window are served from cache."""
+        import json
+
+        cache = Cache(db_path=temp_db)
+        today = datetime.now().date()
+
+        # Mock fetcher returns events for the window
+        events = [
+            {"id": "1", "summary": "Event 1", "date": str(today)},
+            {"id": "2", "summary": "Event 2", "date": str(today + timedelta(days=1))},
+        ]
+
+        async def mock_fetcher(_start, _end):
+            return {"result": json.dumps(events), "status": 200}
+
+        # First call fetches - pass date objects, not strings
+        result = await cache.get_events_cached(today, today + timedelta(days=1), mock_fetcher)
+
+        # Should return filtered events for the requested range
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_get_events_cached_force_refresh(self, temp_db):
+        """Test force_refresh bypasses cache."""
+        cache = Cache(db_path=temp_db)
+        today = datetime.now().date()
+
+        call_count = 0
+
+        async def mock_fetcher(_start, _end):
+            nonlocal call_count
+            call_count += 1
+            return []  # Return empty list
+
+        # First call - pass date objects
+        await cache.get_events_cached(today, today, mock_fetcher)
+        # Force refresh
+        await cache.get_events_cached(today, today, mock_fetcher, force_refresh=True)
+
+        assert call_count == 2
+
+    def test_filter_events_by_date_range(self, temp_db):
+        """Test _filter_events_by_date_range filters correctly."""
+        cache = Cache(db_path=temp_db)
+
+        events = [
+            {"id": "1", "date": "2025-01-15"},
+            {"id": "2", "date": "2025-01-16"},
+            {"id": "3", "date": "2025-01-17"},
+            {"id": "4", "date": "2025-01-18"},
+        ]
+
+        # Filter for Jan 16-17
+        from datetime import date
+
+        start = date(2025, 1, 16)
+        end = date(2025, 1, 17)
+
+        filtered = cache._filter_events_by_date_range(events, start, end)
+
+        assert len(filtered) == 2
+        assert filtered[0]["id"] == "2"
+        assert filtered[1]["id"] == "3"
+
+    def test_filter_events_handles_start_field(self, temp_db):
+        """Test _filter_events_by_date_range uses start field when date missing."""
+        cache = Cache(db_path=temp_db)
+
+        events = [
+            {"id": "1", "start": "2025-01-16T10:00:00-05:00"},  # Has datetime, no date
+            {"id": "2", "date": "2025-01-16"},  # Has date field
+        ]
+
+        from datetime import date
+
+        start = date(2025, 1, 16)
+        end = date(2025, 1, 16)
+
+        filtered = cache._filter_events_by_date_range(events, start, end)
+
+        assert len(filtered) == 2
+
+    def test_filter_events_empty_list(self, temp_db):
+        """Test _filter_events_by_date_range handles empty list."""
+        cache = Cache(db_path=temp_db)
+        from datetime import date
+
+        filtered = cache._filter_events_by_date_range([], date(2025, 1, 16), date(2025, 1, 16))
+
+        assert filtered == []

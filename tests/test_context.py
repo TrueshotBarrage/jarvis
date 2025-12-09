@@ -167,3 +167,52 @@ class TestContextBuildSystemPrompt:
 
         assert "CONTEXT:" not in result
         assert "CURRENT TIME:" not in result
+
+
+class TestContextBuildWithCachedData:
+    """Test suite for Context.build with cached data."""
+
+    def test_build_formats_weather_data(self, temp_db):
+        """Test build includes and formats weather data."""
+        cache = Cache(db_path=temp_db)
+        cache.set("weather", {"result": '{"temp": 72}'})
+        ctx = Context(cache)
+
+        result = ctx.build()
+
+        assert "WEATHER:" in result
+        assert "72" in result
+
+    def test_build_formats_events_data(self, temp_db):
+        """Test build includes and formats events data."""
+        cache = Cache(db_path=temp_db)
+        cache.set("events", {"result": '[{"summary": "Meeting"}]'})
+        ctx = Context(cache)
+
+        result = ctx.build()
+
+        assert "EVENTS:" in result
+
+    def test_build_formats_todos_data(self, temp_db):
+        """Test build includes and formats todos data."""
+        cache = Cache(db_path=temp_db)
+        cache.set("todos", {"result": '[{"content": "Task"}]'})
+        ctx = Context(cache)
+
+        result = ctx.build()
+
+        assert "TODOS:" in result
+
+    def test_build_includes_all_cached_data(self, temp_db):
+        """Test build includes all cached data types."""
+        cache = Cache(db_path=temp_db)
+        cache.set("weather", {"result": '{"temp": 72}'})
+        cache.set("events", {"result": '[{"summary": "Meeting"}]'})
+        cache.set("todos", {"result": '[{"content": "Task"}]'})
+        ctx = Context(cache)
+
+        result = ctx.build()
+
+        assert "WEATHER:" in result
+        assert "EVENTS:" in result
+        assert "TODOS:" in result

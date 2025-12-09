@@ -156,3 +156,91 @@ class TestArms:
             assert result["result"] is None
 
         await arms.stop()
+
+    @pytest.mark.asyncio
+    async def test_get_events_range_success(self):
+        """Test get_events_range returns formatted calendar events for date range."""
+        from jarvis.apis.calendar import CalendarAPI
+
+        arms = Arms()
+        arms.start()
+
+        mock_events = [
+            {
+                "id": "1",
+                "summary": "Day 1",
+                "start": "2025-01-15T10:00:00",
+                "end": "2025-01-15T11:00:00",
+                "date": "2025-01-15",
+            },
+            {
+                "id": "2",
+                "summary": "Day 2",
+                "start": "2025-01-16T10:00:00",
+                "end": "2025-01-16T11:00:00",
+                "date": "2025-01-16",
+            },
+        ]
+
+        with patch.object(CalendarAPI, "get_events_range", return_value=mock_events):
+            result = await arms.get_events_range("2025-01-15", "2025-01-16")
+
+            assert result["status"] == 200
+            assert '"Day 1"' in result["result"]
+            assert '"Day 2"' in result["result"]
+
+        await arms.stop()
+
+    @pytest.mark.asyncio
+    async def test_get_events_range_handles_error(self):
+        """Test get_events_range handles CalendarAPIError gracefully."""
+        from jarvis.apis.calendar import CalendarAPI, CalendarAPIError
+
+        arms = Arms()
+        arms.start()
+
+        with patch.object(
+            CalendarAPI, "get_events_range", side_effect=CalendarAPIError("Test error")
+        ):
+            result = await arms.get_events_range("2025-01-15", "2025-01-16")
+
+            assert result["status"] == 500
+            assert result["result"] is None
+
+        await arms.stop()
+
+    @pytest.mark.asyncio
+    async def test_get_todos_success(self):
+        """Test get_todos returns formatted tasks."""
+        from jarvis.apis.todoist import TodoistAPI
+
+        arms = Arms()
+        arms.start()
+
+        mock_todos = [
+            {"id": "1", "content": "Buy groceries", "due": {"date": "2025-01-15"}},
+        ]
+
+        with patch.object(TodoistAPI, "get_tasks", return_value=mock_todos):
+            result = await arms.get_todos("2025-01-15")
+
+            assert result["status"] == 200
+            assert '"Buy groceries"' in result["result"]
+
+        await arms.stop()
+
+    @pytest.mark.asyncio
+    async def test_get_todos_handles_error(self):
+        """Test get_todos handles API errors gracefully."""
+        from jarvis.apis.todoist import TodoistAPI, TodoistAPIError
+
+        arms = Arms()
+        arms.start()
+
+        with patch.object(TodoistAPI, "get_tasks", side_effect=TodoistAPIError("Test error")):
+            result = await arms.get_todos("2025-01-15")
+
+            assert result["status"] == 500
+            assert result["result"] is None
+
+        await arms.stop()
